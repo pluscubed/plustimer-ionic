@@ -3,7 +3,7 @@ import {ErrorHandler, NgModule} from "@angular/core";
 import {IonicApp, IonicErrorHandler, IonicModule} from "ionic-angular";
 import {MyApp} from "./app.component";
 
-import {HelloIonicPage} from "../pages/hello-ionic/hello-ionic";
+import {TimerPage} from "../pages/timer-page/timer-page";
 import {ItemDetailsPage} from "../pages/item-details/item-details";
 import {ListPage} from "../pages/list/list";
 
@@ -13,7 +13,7 @@ import {SplashScreen} from "@ionic-native/splash-screen";
 @NgModule({
   declarations: [
     MyApp,
-    HelloIonicPage,
+    TimerPage,
     ItemDetailsPage,
     ListPage
   ],
@@ -24,7 +24,7 @@ import {SplashScreen} from "@ionic-native/splash-screen";
   bootstrap: [IonicApp],
   entryComponents: [
     MyApp,
-    HelloIonicPage,
+    TimerPage,
     ItemDetailsPage,
     ListPage
   ],

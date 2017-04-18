@@ -3,10 +3,10 @@ import {Timer} from "./timer";
 import {Subject} from "rxjs/Rx";
 
 @Component({
-  selector: 'page-hello-ionic',
-  templateUrl: 'hello-ionic.html'
+  selector: 'page-timer',
+  templateUrl: 'timer-page.html'
 })
-export class HelloIonicPage implements Timer.View {
+export class TimerPage implements Timer.View {
   viewModel: Timer.ViewModel;
   private keyup$: Subject<KeyboardEvent>;
   private keydown$: Subject<KeyboardEvent>;

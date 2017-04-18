@@ -70,7 +70,8 @@ export namespace Timer {
         })
         .map((time: number) => new ViewModel(Util.formatTime(time)));
 
-      return Observable.merge<ViewModel>(keydownIntent$, keyupIntent$);
+      return Observable.merge<ViewModel>(keydownIntent$, keyupIntent$)
+        .startWith(new ViewModel(Util.formatTime(0)));
     }
   }
 

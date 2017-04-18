@@ -2,7 +2,7 @@ import {Component, ViewChild} from "@angular/core";
 
 import {MenuController, Nav, Platform} from "ionic-angular";
 
-import {HelloIonicPage} from "../pages/hello-ionic/hello-ionic";
+import {TimerPage} from "../pages/timer-page/timer-page";
 import {ListPage} from "../pages/list/list";
 
 import {StatusBar} from "@ionic-native/status-bar";
@@ -15,8 +15,8 @@ import {SplashScreen} from "@ionic-native/splash-screen";
 export class MyApp {
   @ViewChild(Nav) nav: Nav;
 
-  // make HelloIonicPage the root (or first) page
-  rootPage = HelloIonicPage;
+  // make TimerPage the root (or first) page
+  rootPage = TimerPage;
   pages: Array<{ title: string, component: any }>;
 
   constructor(public platform: Platform,
@@ -27,7 +27,7 @@ export class MyApp {
 
     // set our app's pages
     this.pages = [
-      {title: 'Hello Ionic', component: HelloIonicPage},
+      {title: 'Timer', component: TimerPage},
       {title: 'My First List', component: ListPage}
     ];
   }
