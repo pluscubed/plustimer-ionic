@@ -1,46 +1,43 @@
-import {Component} from "@angular/core";
+import {Component, HostListener} from "@angular/core";
+import {Timer} from "./timer";
+import {Subject} from "rxjs/Rx";
 
 @Component({
   selector: 'page-hello-ionic',
   templateUrl: 'hello-ionic.html'
 })
-export class HelloIonicPage {
-  displayTime: string;
-  timer: Timer;
+export class HelloIonicPage implements Timer.View {
+  viewModel: Timer.ViewModel;
+  private keyup$: Subject<KeyboardEvent>;
+  private keydown$: Subject<KeyboardEvent>;
+  presenter: Timer.Presenter;
 
   constructor() {
-    this.timer = new Timer(time => {
+    this.viewModel = new Timer.ViewModel("");
+    this.keyup$ = new Subject();
+    this.keydown$ = new Subject();
 
-    });
-  }
-}
+    this.presenter = new Timer.Presenter();
 
-export class Timer {
-  running: boolean;
-  startTime: number;
-  currentTimeCallback: (time: number) => void;
-  animFrameBound: FrameRequestCallback;
-
-  constructor(currentTimeCallback: (time: number) => void) {
-    this.animFrameBound = this.animFrame.bind(this);
-    this.currentTimeCallback = currentTimeCallback;
+    this.presenter.viewModel$(this.intent())
+      .subscribe(viewModel => this.viewModel = viewModel);
   }
 
-  start() {
-    this.startTime = Date.now();
-    this.running = true;
-    requestAnimationFrame(this.animFrameBound);
+  intent(): Timer.Intent {
+    return {
+      keyup$: this.keyup$.asObservable(),
+      keydown$: this.keydown$.asObservable()
+    };
   }
 
-  animFrame() {
-    if (!this.running) {
-      return;
-    }
-    this.currentTimeCallback(this.elapsed());
-    requestAnimationFrame(this.animFrameBound);
+  @HostListener('document:keyup', ['$event'])
+  handleKeyboardUp(event: KeyboardEvent) {
+    this.keyup$.next(event);
+    console.log("key up")
   }
 
-  elapsed() {
-    return Date.now() - this.startTime;
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardDown(event: KeyboardEvent) {
+    this.keydown$.next(event);
   }
 }

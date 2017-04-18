@@ -1,222 +1,190 @@
-"use strict";
+import {Observable, Scheduler} from "rxjs/Rx";
+export namespace Timer {
 
-var Timer = {};
+  export class ViewModel {
+    readonly displayTime: string;
 
-/**
- * @param {!Element} domElement
- * @param {function(!Timer.Timer.Milliseconds)} solveDoneCallback
- * @param {function(!Timer.Timer.Milliseconds)} attemptDoneCallback
- */
-Timer.Controller = function (domElement, solveDoneCallback, attemptDoneCallback) {
-  this._domElement = domElement;
-  this._solveDoneCallback = solveDoneCallback;
-  this._attemptDoneCallback = attemptDoneCallback;
-
-  var timerView = new Timer.View(domElement);
-  this._timer = new Timer.Timer(timerView.displayTime.bind(timerView));
-
-  document.body.addEventListener("keydown", this._keyDown.bind(this));
-  document.body.addEventListener("keyup", this._keyUp.bind(this));
-
-  FastClick.attach(domElement);
-
-  domElement.addEventListener("touchstart", this._down.bind(this));
-  domElement.addEventListener("touchend", this._up.bind(this));
-
-  document.body.addEventListener("touchstart", this._downIfRunning.bind(this));
-  document.body.addEventListener("touchend", this._upIfStopped.bind(this));
-
-  if (navigator.maxTouchPoints > 0) {
-    domElement.addEventListener("pointerdown", this._down.bind(this));
-    domElement.addEventListener("pointerup", this._up.bind(this));
-
-    document.body.addEventListener("pointerdown", this._downIfRunning.bind(this));
-    document.body.addEventListener("pointerup", this._upIfStopped.bind(this));
+    constructor(displayTime: string) {
+      this.displayTime = displayTime;
+    }
   }
 
-  this._setState(Timer.Controller.State.Ready);
-}
+  export interface View {
+    intent(): Intent;
+  }
 
-Timer.Controller.prototype = {
-  /**
-   * @param {!Event} e
-   */
-  _keyDown: function (e) {
-    if (this._isTimerKey(e) || this._state === Timer.Controller.State.Running) {
-      this._down();
+  export interface Intent {
+    keyup$: Observable<KeyboardEvent>;
+    keydown$: Observable<KeyboardEvent>;
+  }
+
+  export class Presenter {
+    timer: Timer;
+
+    constructor() {
+      this.timer = new Timer();
     }
-  },
 
-  /**
-   * @param {!Event} e
-   */
-  _keyUp: function (e) {
-    if (this._isTimerKey(e) || this._state === Timer.Controller.State.Stopped) {
-      this._up();
+    viewModel$(intent: Intent) {
+      const keydownIntent$ = intent.keydown$
+        .filter(event => event.key === ' ' || this.timer.state == TimerState.Running)
+        .flatMap(event => {
+          const transitionMap = {
+            "ready": TimerState.HandOnTimer,
+            "handOnTimer": TimerState.Ignore,
+            "running": TimerState.Stopped,
+            "stopped": TimerState.Ignore
+          };
+          this.timer.setState(transitionMap[this.timer.state]);
+
+          switch (this.timer.state) {
+            case TimerState.Stopped:
+              return Observable.of(this.timer.time);
+            default:
+              return Observable.empty();
+          }
+        })
+        .map((time: number) => new ViewModel(Util.formatTime(time)));
+
+      const keyupIntent$ = intent.keyup$
+        .filter(event => event.key === ' ' || this.timer.state == TimerState.Stopped)
+        .flatMap(event => {
+          const transitionMap = {
+            "ready": TimerState.Ignore,
+            "handOnTimer": TimerState.Running,
+            "running": TimerState.Ignore,
+            "stopped": TimerState.Ready
+          };
+          this.timer.setState(transitionMap[this.timer.state]);
+
+          switch (this.timer.state) {
+            case TimerState.Running:
+              return Observable
+                .of(0, Scheduler.animationFrame)
+                .repeat()
+                .takeUntil(intent.keydown$)
+                .map(i => this.timer.elapsed());
+            default:
+              return Observable.empty();
+          }
+        })
+        .map((time: number) => new ViewModel(Util.formatTime(time)));
+
+      return Observable.merge<ViewModel>(keydownIntent$, keyupIntent$);
     }
-  },
+  }
 
-  /**
-   * @param {!Event} e
-   */
-  _isTimerKey: function (e) {
-    // Only allow spacebar for now.
-    return e.which === 32;
-  },
+  const TimerState = {
+    Ready: "ready",
+    HandOnTimer: "handOnTimer",
+    Running: "running",
+    Stopped: "stopped",
+    Ignore: "ignore"
+  };
 
-  _down: function () {
-    var State = Timer.Controller.State;
-    var transitionMap = {
-      "ready": State.HandOnTimer,
-      "handOnTimer": State.Ignore,
-      "running": State.Stopped,
-      "stopped": State.Ignore
+  export class Timer {
+    startTime: number;
+    time: number;
+    state: string;
+
+    constructor() {
+      this.state = TimerState.Ready;
     }
-    this._setState(transitionMap[this._state]);
-  },
 
-  _up: function (e) {
-    var State = Timer.Controller.State;
-    var transitionMap = {
-      "ready": State.Ignore,
-      "handOnTimer": State.Running,
-      "running": State.Ignore,
-      "stopped": State.Ready
+    setState(state: any) {
+      switch (state) {
+        case TimerState.Ready:
+          break;
+        case TimerState.HandOnTimer:
+          this.reset();
+          break;
+        case TimerState.Running:
+          this.start();
+          break;
+        case TimerState.Stopped:
+          this.stop();
+          break;
+        case TimerState.Ignore:
+          return;
+        default:
+          console.error("Tried to set invalid state in controller:", state);
+          break;
+      }
+
+      this.state = state;
     }
-    this._setState(transitionMap[this._state]);
-  },
 
-  _downIfRunning: function (e) {
-    if (this._state === "running") {
-      this._down(e);
-      e.preventDefault();
+    reset() {
+      this.time = 0;
+      this.startTime = 0;
     }
-  },
 
-  _upIfStopped: function (e) {
-    if (this._state === "stopped") {
-      this._up(e);
-      e.preventDefault();
+    start() {
+      this.startTime = Date.now();
     }
-  },
 
-  reset: function () {
-    this._timer.reset();
-  },
+    stop() {
+      this.time = this.elapsed();
+      this.startTime = 0;
+    }
 
-  /**
-   * @param {!Timer.Controller.State} state
-   */
-  _setState: function (state) {
-    var State = Timer.Controller.State;
-    switch (state) {
-      case State.Ready:
-        if (this._state == State.Stopped) {
-          this._attemptDoneCallback();
+    elapsed() {
+      return Date.now() - this.startTime;
+    }
+  }
+
+  export interface TimeParts {
+    secString: string;
+    decimals: string;
+  }
+
+  export class Util {
+
+    /*
+     * @param {!TimerApp.Timer.Milliseconds} time
+     */
+    static timeParts(time: number): TimeParts {
+      // Each entry is [minimum number of digits if not first, separator before, value]
+      let hours: number = Math.floor(time / (60 * 60 * 1000));
+      let minutes: number = Math.floor(time / (     60 * 1000)) % 60;
+      let seconds: number = Math.floor(time / (          1000)) % 60;
+
+      /**
+       * @param {number} number
+       * @param {number} numDigitsAfterPadding
+       */
+      function pad(number: number, numDigitsAfterPadding: number): string {
+        let output: string = "" + number;
+        while (output.length < numDigitsAfterPadding) {
+          output = "0" + output;
         }
-        break;
-      case State.HandOnTimer:
-        this.reset();
-        break;
-      case State.Running:
-        this._timer.start();
-        break;
-      case State.Stopped:
-        var time = this._timer.stop();
-        this._solveDoneCallback(time);
-        break;
-      case State.Ignore:
-        return;
-      default:
-        console.error("Tried to set invalid state in controller:", state);
-        break;
+        return output;
+      }
+
+      let secString: string;
+      if (hours > 0) {
+        secString = "" + pad(hours, 2) + ":" + pad(minutes, 2) + ":" + pad(seconds, 2);
+      } else if (minutes > 0) {
+        secString = "" + minutes + ":" + pad(seconds, 2);
+      } else {
+        secString = "" + seconds;
+      }
+
+      let centiseconds: number = Math.floor((time % 1000) / 10);
+
+      return {
+        secString: secString,
+        decimals: "" + pad(centiseconds, 2)
+      };
     }
-    this._domElement.classList.remove(this._state);
-    this._state = state;
-    this._domElement.classList.add(this._state);
+
+    static formatTime(time: number): string {
+      if (time === null) {
+        return "---"
+      }
+
+      let parts = this.timeParts(time);
+      return parts.secString + "." + parts.decimals;
+    }
   }
 }
-
-Timer.Controller.State = {
-  Ready: "ready",
-  HandOnTimer: "handOnTimer",
-  Running: "running",
-  Stopped: "stopped",
-  Ignore: "ignore"
-}
-
-
-/**
- * @param {!Element} domElement
- */
-Timer.View = function (domElement) {
-  this._secFirstElement = domElement.getElementsByClassName("sec-first")[0];
-  this._secRestElement = domElement.getElementsByClassName("sec-rest")[0];
-  this._decimalDigitsElement = domElement.getElementsByClassName("decimal-digits")[0];
-}
-
-Timer.View.prototype = {
-  /**
-   * @param {!Timer.Timer.Milliseconds} time
-   */
-  displayTime: function (time) {
-    var parts = Stats.prototype.timeParts(time);
-    this._secFirstElement.textContent = parts.secFirst;
-    this._secRestElement.textContent = parts.secRest;
-    this._decimalDigitsElement.textContent = parts.decimals;
-  },
-}
-
-
-/**
- * @param {function(!Timer.Timer.Milliseconds)} currentTimeCallback
- */
-Timer.Timer = function (currentTimeCallback) {
-  this._currentTimeCallback = currentTimeCallback;
-  this._running = false;
-
-  this._animFrameBound = this._animFrame.bind(this);
-};
-
-Timer.Timer.prototype = {
-  start: function () {
-    this._startTime = Date.now();
-    this._currentTimeCallback(0);
-    this._running = true;
-    requestAnimationFrame(this._animFrameBound);
-  },
-
-  /**
-   * @returns {!Timer.Timer.Milliseconds}
-   */
-  stop: function () {
-    this._running = false;
-    cancelAnimationFrame(this._animFrameBound);
-    var time = this._elapsed();
-    this._currentTimeCallback(time);
-    return time;
-  },
-
-  reset: function () {
-    this._currentTimeCallback(0);
-  },
-
-  _animFrame: function () {
-    if (!this._running) {
-      return;
-    }
-    this._currentTimeCallback(this._elapsed());
-    requestAnimationFrame(this._animFrameBound);
-  },
-
-  /**
-   * @returns {Timer.Timer.Milliseconds}
-   */
-  _elapsed: function () {
-    return Date.now() - this._startTime;
-  }
-}
-
-// Time in milliseconds
-/** @typedef {integer} */
-Timer.Timer.Milliseconds;
