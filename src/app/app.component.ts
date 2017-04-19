@@ -12,7 +12,7 @@ import {SplashScreen} from "@ionic-native/splash-screen";
 @Component({
   templateUrl: 'app.html'
 })
-export class MyApp {
+export class AppComponent {
   @ViewChild(Nav) nav: Nav;
 
   // make TimerPage the root (or first) page

@@ -1,29 +1,33 @@
 import {BrowserModule} from "@angular/platform-browser";
 import {ErrorHandler, NgModule} from "@angular/core";
 import {IonicApp, IonicErrorHandler, IonicModule} from "ionic-angular";
-import {MyApp} from "./app.component";
+import {AppComponent} from "./app.component";
 
 import {TimerPage} from "../pages/timer-page/timer-page";
 import {ItemDetailsPage} from "../pages/item-details/item-details";
 import {ListPage} from "../pages/list/list";
 
+import {TimerComponent} from "../pages/timer-component/timer-component";
+
 import {StatusBar} from "@ionic-native/status-bar";
 import {SplashScreen} from "@ionic-native/splash-screen";
+import {SolvesService} from "../providers/solves.service";
 
 @NgModule({
   declarations: [
-    MyApp,
+    AppComponent,
     TimerPage,
     ItemDetailsPage,
-    ListPage
+    ListPage,
+    TimerComponent
   ],
   imports: [
     BrowserModule,
-    IonicModule.forRoot(MyApp),
+    IonicModule.forRoot(AppComponent),
   ],
   bootstrap: [IonicApp],
   entryComponents: [
-    MyApp,
+    AppComponent,
     TimerPage,
     ItemDetailsPage,
     ListPage
@@ -31,6 +35,7 @@ import {SplashScreen} from "@ionic-native/splash-screen";
   providers: [
     StatusBar,
     SplashScreen,
+    SolvesService,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })

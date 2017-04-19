@@ -1,4 +1,53 @@
 import {Observable, Scheduler} from "rxjs/Rx";
+import {Component, HostListener} from "@angular/core";
+import {Subject} from "rxjs/Subject";
+import {Solve, SolvesService} from "../../providers/solves.service";
+import {Platform} from "ionic-angular";
+
+@Component({
+  selector: 'timer',
+  templateUrl: 'timer-component.html'
+})
+export class TimerComponent implements Timer.View {
+  private viewModel: Timer.ViewModel;
+  private keyup$: Subject<KeyboardEvent>;
+  private keydown$: Subject<KeyboardEvent>;
+  private presenter: Timer.Presenter;
+  private platform: Platform;
+
+  constructor(solvesService: SolvesService, platform: Platform) {
+    this.platform = platform;
+
+    this.viewModel = new Timer.ViewModel("");
+    this.keyup$ = new Subject();
+    this.keydown$ = new Subject();
+
+    this.presenter = new Timer.Presenter(solvesService);
+
+    this.presenter.viewModel$(this.intent())
+      .do(null, err => console.log('%s', err))
+      .onErrorResumeNext(Observable.empty<Timer.ViewModel>())
+      .subscribe(viewModel => this.viewModel = viewModel);
+  }
+
+  intent(): Timer.Intent {
+    return {
+      keyup$: this.keyup$.asObservable(),
+      keydown$: this.keydown$.asObservable()
+    };
+  }
+
+  @HostListener('document:keyup', ['$event'])
+  handleKeyboardUp(event: KeyboardEvent) {
+    this.keyup$.next(event);
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardDown(event: KeyboardEvent) {
+    this.keydown$.next(event);
+  }
+}
+
 export namespace Timer {
 
   export class ViewModel {
@@ -20,9 +69,11 @@ export namespace Timer {
 
   export class Presenter {
     timer: Timer;
+    solvesService: SolvesService;
 
-    constructor() {
+    constructor(solvesService: SolvesService) {
       this.timer = new Timer();
+      this.solvesService = solvesService;
     }
 
     viewModel$(intent: Intent) {
@@ -39,7 +90,11 @@ export namespace Timer {
 
           switch (this.timer.state) {
             case TimerState.Stopped:
-              return Observable.of(this.timer.time);
+              return Observable.of(this.timer.time)
+                .do((time: number) => {
+                  let solve = new Solve(time, Date.now(), "");
+                  this.solvesService.add(solve);
+                });
             default:
               return Observable.empty();
           }
