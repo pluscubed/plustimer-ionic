@@ -1,0 +1,5 @@
+<ion-scroll scrollX="true">
+  <button ion-button full class="solve" *ngFor="let solve of viewModel.solves; trackBy: trackById;">
+    {{displayTime(solve)}}
+  </button>
+</ion-scroll>

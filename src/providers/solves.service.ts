@@ -3,6 +3,7 @@ import * as PouchDB from "pouchdb";
 import cordovaSqlitePlugin from "pouchdb-adapter-cordova-sqlite";
 import {Observable} from "rxjs/Rx";
 import {Platform} from "ionic-angular";
+import {Util} from "../app/util";
 
 @Injectable()
 export class SolvesService {
@@ -13,13 +14,20 @@ export class SolvesService {
   constructor(private platform: Platform) {
   }
 
-  initDB() {
-    PouchDB.plugin(cordovaSqlitePlugin);
-    if (this.platform.is('cordova')) {
-      this.db = new PouchDB('solves.db', {adapter: 'cordova-sqlite'});
-    } else {
-      this.db = new PouchDB('solves.db');
-    }
+  initDB(): Observable<any> {
+    return Observable.fromPromise(this.platform.ready())
+      .flatMap(() => {
+        if (!this.db) {
+          PouchDB.plugin(cordovaSqlitePlugin);
+          if (this.platform.is('cordova')) {
+            this.db = new PouchDB('solves.db', {adapter: 'cordova-sqlite'});
+          } else {
+            this.db = new PouchDB('solves.db');
+          }
+        }
+
+        return Observable.of(0);
+      })
   }
 
   add(solve: Solve) {
@@ -27,28 +35,45 @@ export class SolvesService {
   }
 
   getAll(): Observable<Array<Solve>> {
-    if (!this.solves) {
-      return this.db.allDocs({include_docs: true})
-        .then(docs => {
+    /*if (!this.solves) {*/
+    return Observable.of(this.solves)
+      .filter(solves => !!solves)
+      .concat(
+        this.initDB()
+          .flatMap(() => Observable.fromPromise(this.db.allDocs({include_docs: true})))
+          .flatMap((docs: PouchDB.Core.AllDocsResponse<any>) => {
+            this.solves = docs.rows.map(row => {
+              return row.doc;
+            });
 
-          this.solves = docs.rows.map(row => {
-            return row.doc;
-          });
-
-          // Listen for changes on the database.
-          this.db.changes({live: true, since: 'now', include_docs: true})
-            .on('change', this.onDatabaseChange);
-
-          return Observable.of(this.db);
-        });
-    } else {
-      // Return cached data
-      return Observable.of(this.db);
-    }
+            return Observable.of(this.solves);
+          })
+          .concat(this.getChanges()
+            .map(change => {
+              this.onDatabaseChange(change);
+              return this.solves;
+            })
+          )
+      ).map(array => array.sort());
+    /* } else {
+     // Return cached data
+     return ;
+     }*/
   }
 
+  getChanges(): Observable<any> {
+    return Observable.create(observer => {
+      // Listen for changes on the database.
+      this.db.changes({live: true, since: 'now', include_docs: true})
+        .on('change', change => {
+          observer.next(change);
+        });
+    });
+  }
+
+
   private onDatabaseChange = (change) => {
-    let index = this.findIndex(this.solves, change.id);
+    let index = Util.findIndex(this.solves, change.doc);
     let solve = this.solves[index];
 
     if (change.deleted) {
@@ -59,34 +84,27 @@ export class SolvesService {
       if (solve && solve._id === change.id) {
         this.solves[index] = change.doc; // update
       } else {
-        this.solves.splice(index, 0, change.doc) // insert
+        this.solves.push(change.doc) // insert
       }
     }
   };
 
-// Binary search, the array is by default sorted by _id.
-  private findIndex(array, id) {
-    let low = 0, high = array.length, mid;
-    while (low < high) {
-      mid = (low + high) >>> 1;
-      array[mid]._id < id ? low = mid + 1 : high = mid
-    }
-    return low;
-  }
-
-
 }
 
 export class Solve {
-  _id: string;
-  time: number;
-  timestamp: number;
-  scramble: string;
+  readonly _id: string;
+  readonly time: number;
+  readonly timestamp: number;
+  readonly scramble: string;
 
   constructor(time: number, timestamp: number, scramble: string) {
     this._id = "";
     this.time = time;
     this.timestamp = timestamp;
     this.scramble = scramble;
+  }
+
+  valueof() {
+    return this.timestamp;
   }
 }

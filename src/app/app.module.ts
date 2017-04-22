@@ -12,6 +12,7 @@ import {TimerComponent} from "../pages/timer-component/timer-component";
 import {StatusBar} from "@ionic-native/status-bar";
 import {SplashScreen} from "@ionic-native/splash-screen";
 import {SolvesService} from "../providers/solves.service";
+import {SolvesBarComponent} from "../pages/solves-bar-component/solves-bar-component";
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import {SolvesService} from "../providers/solves.service";
     TimerPage,
     ItemDetailsPage,
     ListPage,
-    TimerComponent
+    TimerComponent,
+    SolvesBarComponent
   ],
   imports: [
     BrowserModule,
