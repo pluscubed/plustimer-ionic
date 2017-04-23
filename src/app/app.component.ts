@@ -1,12 +1,11 @@
 import {Component, ViewChild} from "@angular/core";
 
 import {MenuController, Nav, Platform} from "ionic-angular";
-
-import {TimerPage} from "../pages/timer-page/timer-page";
 import {ListPage} from "../pages/list/list";
 
 import {StatusBar} from "@ionic-native/status-bar";
 import {SplashScreen} from "@ionic-native/splash-screen";
+import {CurrentSessionPage} from "../pages/current-session-page/current-session-page";
 
 
 @Component({
@@ -15,8 +14,8 @@ import {SplashScreen} from "@ionic-native/splash-screen";
 export class AppComponent {
   @ViewChild(Nav) nav: Nav;
 
-  // make TimerPage the root (or first) page
-  rootPage = TimerPage;
+  // make CurrentSessionPage the root (or first) page
+  rootPage = CurrentSessionPage;
   pages: Array<{ title: string, component: any }>;
 
   constructor(public platform: Platform,
@@ -27,7 +26,7 @@ export class AppComponent {
 
     // set our app's pages
     this.pages = [
-      {title: 'Timer', component: TimerPage},
+      {title: 'Timer', component: CurrentSessionPage},
       {title: 'My First List', component: ListPage}
     ];
   }

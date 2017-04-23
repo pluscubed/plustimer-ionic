@@ -13,6 +13,8 @@ import {StatusBar} from "@ionic-native/status-bar";
 import {SplashScreen} from "@ionic-native/splash-screen";
 import {SolvesService} from "../providers/solves.service";
 import {SolvesBarComponent} from "../pages/solves-bar-component/solves-bar-component";
+import {CurrentSessionPage} from "../pages/current-session-page/current-session-page";
+import {SuperTabsModule} from "ionic2-super-tabs";
 
 @NgModule({
   declarations: [
@@ -20,11 +22,13 @@ import {SolvesBarComponent} from "../pages/solves-bar-component/solves-bar-compo
     TimerPage,
     ItemDetailsPage,
     ListPage,
+    CurrentSessionPage,
     TimerComponent,
     SolvesBarComponent
   ],
   imports: [
     BrowserModule,
+    SuperTabsModule.forRoot(),
     IonicModule.forRoot(AppComponent),
   ],
   bootstrap: [IonicApp],
@@ -32,7 +36,8 @@ import {SolvesBarComponent} from "../pages/solves-bar-component/solves-bar-compo
     AppComponent,
     TimerPage,
     ItemDetailsPage,
-    ListPage
+    ListPage,
+    CurrentSessionPage
   ],
   providers: [
     StatusBar,

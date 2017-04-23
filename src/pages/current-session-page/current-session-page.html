@@ -1,0 +1,15 @@
+<ion-header>
+  <ion-navbar color="primary">
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>plusTimer</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content>
+  <ion-tabs ion-fixed="true" tabsPlacement="top">
+    <ion-tab [root]="tab1Root" tabTitle="Timer"></ion-tab>
+    <ion-tab [root]="tab2Root" tabTitle="Details"></ion-tab>
+  </ion-tabs>
+</ion-content>

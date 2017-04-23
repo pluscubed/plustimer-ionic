@@ -23,6 +23,7 @@
     "@ionic-native/status-bar": "3.5.0",
     "@ionic/storage": "2.0.1",
     "ionic-angular": "3.0.1",
+    "ionic2-super-tabs": "^2.2.2",
     "ionicons": "3.0.0",
     "pouchdb": "^6.1.2",
     "pouchdb-adapter-cordova-sqlite": "^2.0.2",
