@@ -1,4 +1,4 @@
-import {BrowserModule} from "@angular/platform-browser";
+import {BrowserModule, HAMMER_GESTURE_CONFIG} from "@angular/platform-browser";
 import {ErrorHandler, NgModule} from "@angular/core";
 import {IonicApp, IonicErrorHandler, IonicModule} from "ionic-angular";
 import {AppComponent} from "./app.component";
@@ -15,6 +15,7 @@ import {SolvesService} from "../providers/solves.service";
 import {SolvesBarComponent} from "../pages/solves-bar-component/solves-bar-component";
 import {CurrentSessionPage} from "../pages/current-session-page/current-session-page";
 import {SuperTabsModule} from "ionic2-super-tabs";
+import {AppGestureConfig} from "./gesture-config";
 
 @NgModule({
   declarations: [
@@ -43,7 +44,8 @@ import {SuperTabsModule} from "ionic2-super-tabs";
     StatusBar,
     SplashScreen,
     SolvesService,
-    {provide: ErrorHandler, useClass: IonicErrorHandler}
+    {provide: ErrorHandler, useClass: IonicErrorHandler},
+    {provide: HAMMER_GESTURE_CONFIG, useClass: AppGestureConfig}
   ]
 })
 export class AppModule {

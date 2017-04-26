@@ -3,13 +3,25 @@ solves-bar {
   height: 48px;
 }
 
-ion-scroll {
-  white-space: nowrap;
-  height: 100%;
+.solves {
+  max-width: 800px;
+  margin: 0 auto;
+  overflow: visible;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .solve {
   height: 48px;
   width: fit-content;
-  display: inline-block;
+  min-width: 64px;
+  text-align: center;
+  line-height: 48px;
+  vertical-align: middle;
+}
+
+.filler {
+  height: 0;
 }

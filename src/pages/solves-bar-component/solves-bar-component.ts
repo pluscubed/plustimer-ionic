@@ -1,5 +1,5 @@
 import {Observable} from "rxjs/Rx";
-import {Component} from "@angular/core";
+import {Component, HostListener} from "@angular/core";
 import {Solve, SolvesService} from "../../providers/solves.service";
 import {Platform} from "ionic-angular";
 import {Util} from "../../app/util";
@@ -13,6 +13,9 @@ export class SolvesBarComponent implements SolvesBar.View {
   private presenter: SolvesBar.Presenter;
   private platform: Platform;
 
+  public offset: number = 0;
+  public lastDy: number = 0;
+
   constructor(solvesService: SolvesService, platform: Platform) {
     this.platform = platform;
 
@@ -22,6 +25,22 @@ export class SolvesBarComponent implements SolvesBar.View {
       .do(null, err => console.log('%s', err))
       .onErrorResumeNext(Observable.empty<SolvesBar.ViewModel>())
       .subscribe(viewModel => this.viewModel = viewModel);
+  }
+
+  @HostListener('panstart', ['$event'])
+  onPanStart(event: any) {
+    this.lastDy = 0;
+  }
+
+  @HostListener('pan', ['$event'])
+  onPan(event: any) {
+    this.offset += (event.deltaY - this.lastDy);
+    this.lastDy = event.deltaY;
+  }
+
+  @HostListener('panend', ['$event'])
+  onPanEnd(event: any) {
+
   }
 
   trackById(index: number, item: any): number {
@@ -42,7 +61,7 @@ export namespace SolvesBar {
   export class ViewModel {
 
     constructor(public readonly solves: Array<Solve>) {
-      console.log(Date.now() + " " + solves);
+      console.log("" + solves.length);
     }
   }
 
@@ -61,30 +80,6 @@ export namespace SolvesBar {
     }
 
     viewModel$(intent: Intent) {
-      /*const keyupIntent$ = intent.keyup$
-       .filter(event => event.key === ' ' || this.timer.state == TimerState.Stopped)
-       .flatMap(event => {
-       const transitionMap = {
-       "ready": TimerState.Ignore,
-       "handOnTimer": TimerState.Running,
-       "running": TimerState.Ignore,
-       "stopped": TimerState.Ready
-       };
-       this.timer.setState(transitionMap[this.timer.state]);
-
-       switch (this.timer.state) {
-       case TimerState.Running:
-       return Observable
-       .of(0, Scheduler.animationFrame)
-       .repeat()
-       .takeUntil(intent.keydown$)
-       .map(i => this.timer.elapsed());
-       default:
-       return Observable.empty();
-       }
-       })
-       .map((time: number) => new ViewModel(Util.formatTime(time)));*/
-
       return Observable.merge(this.solvesService.getAll()
         .map(solves => solves.reverse())
         .map(solves => new ViewModel(solves)))
