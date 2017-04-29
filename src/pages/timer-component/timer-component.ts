@@ -11,8 +11,12 @@ import {Util} from "../../app/util";
 })
 export class TimerComponent implements Timer.View {
   private viewModel: Timer.ViewModel;
+
   private keyup$: Subject<KeyboardEvent>;
   private keydown$: Subject<KeyboardEvent>;
+  private touchup$: Subject<TouchEvent>;
+  private touchdown$: Subject<TouchEvent>;
+
   private presenter: Timer.Presenter;
   private platform: Platform;
 
@@ -21,6 +25,8 @@ export class TimerComponent implements Timer.View {
 
     this.keyup$ = new Subject();
     this.keydown$ = new Subject();
+    this.touchup$ = new Subject();
+    this.touchdown$ = new Subject();
 
     this.presenter = new Timer.Presenter(solvesService);
 
@@ -33,18 +39,34 @@ export class TimerComponent implements Timer.View {
   intent(): Timer.Intent {
     return {
       keyup$: this.keyup$.asObservable(),
-      keydown$: this.keydown$.asObservable()
+      keydown$: this.keydown$.asObservable(),
+      touchup$: this.touchup$.asObservable(),
+      touchdown$: this.touchdown$.asObservable()
     };
   }
 
+  @HostListener('touchend', ['$event'])
+  onTouchUp(event: TouchEvent) {
+    this.touchup$.next(event);
+    console.log("Touch up");
+  }
+
+  @HostListener('touchstart', ['$event'])
+  onTouchDown(event: TouchEvent) {
+    this.touchdown$.next(event);
+    console.log("Touch down");
+  }
+
   @HostListener('document:keyup', ['$event'])
-  handleKeyboardUp(event: KeyboardEvent) {
+  onKeyboardUp(event: KeyboardEvent) {
     this.keyup$.next(event);
+    console.log("Key up");
   }
 
   @HostListener('document:keydown', ['$event'])
-  handleKeyboardDown(event: KeyboardEvent) {
+  onKeyboardDown(event: KeyboardEvent) {
     this.keydown$.next(event);
+    console.log("Key down");
   }
 }
 
@@ -65,6 +87,8 @@ export namespace Timer {
   export interface Intent {
     keyup$: Observable<KeyboardEvent>;
     keydown$: Observable<KeyboardEvent>;
+    touchup$: Observable<TouchEvent>;
+    touchdown$: Observable<TouchEvent>;
   }
 
   export class Presenter {
@@ -77,8 +101,12 @@ export namespace Timer {
     }
 
     viewModel$(intent: Intent) {
-      const keydownIntent$ = intent.keydown$
-        .filter(event => event.key === ' ' || this.timer.state == TimerState.Running)
+      const downIntent$ = Observable.merge(
+        intent.keydown$.filter(event => event.key === ' ' || this.timer.state == TimerState.Running),
+        intent.touchdown$
+      );
+
+      const down$ = downIntent$
         .flatMap(event => {
           const transitionMap = {
             "ready": TimerState.HandOnTimer,
@@ -101,8 +129,7 @@ export namespace Timer {
         })
         .map((time: number) => new ViewModel(Util.formatTime(time)));
 
-      const keyupIntent$ = intent.keyup$
-        .filter(event => event.key === ' ' || this.timer.state == TimerState.Stopped)
+      const up$ = Observable.merge(intent.keyup$.filter(event => event.key === ' ' || this.timer.state == TimerState.Stopped), intent.touchup$)
         .flatMap(event => {
           const transitionMap = {
             "ready": TimerState.Ignore,
@@ -117,7 +144,7 @@ export namespace Timer {
               return Observable
                 .of(0, Scheduler.animationFrame)
                 .repeat()
-                .takeUntil(intent.keydown$)
+                .takeUntil(downIntent$)
                 .map(i => this.timer.elapsed());
             default:
               return Observable.empty();
@@ -125,7 +152,7 @@ export namespace Timer {
         })
         .map((time: number) => new ViewModel(Util.formatTime(time)));
 
-      return Observable.merge<ViewModel>(keydownIntent$, keyupIntent$)
+      return Observable.merge<ViewModel>(down$, up$)
         .startWith(new ViewModel(Util.formatTime(0)));
     }
   }
