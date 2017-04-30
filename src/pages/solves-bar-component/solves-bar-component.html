@@ -1,14 +1,17 @@
 <div class="bottom-bar">
 
-  <div text-center>
+  <div text-center (click)="onArrowClick()">
     <ion-icon name="ios-arrow-up" class="chevron"></ion-icon>
   </div>
 
-  <div class="solves">
-    <div class="solve" *ngFor="let solve of viewModel.solves">
-      {{displayTime(solve)}}
-    </div>
+  <div class="solves" (scroll)="onSolvesScroll($event)" [style.overflow]="this.scrollEnabled ? 'scroll' : 'visible'"
+       [scrollTop]="this.scrollTop">
+    <div class="solves-sheet">
+      <div class="solve" *ngFor="let solve of viewModel.solves">
+        {{displayTime(solve)}}
+      </div>
 
-    <div class="solve filler" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12]"></div>
+      <div class="solve filler" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12]"></div>
+    </div>
   </div>
 </div>
