@@ -1,4 +1,5 @@
 import {BrowserModule, HAMMER_GESTURE_CONFIG} from "@angular/platform-browser";
+import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {ErrorHandler, NgModule} from "@angular/core";
 import {IonicApp, IonicErrorHandler, IonicModule} from "ionic-angular";
 import {AppComponent} from "./app.component";
@@ -29,6 +30,7 @@ import {AppGestureConfig} from "./gesture-config";
   ],
   imports: [
     BrowserModule,
+    BrowserAnimationsModule,
     SuperTabsModule.forRoot(),
     IonicModule.forRoot(AppComponent),
   ],
