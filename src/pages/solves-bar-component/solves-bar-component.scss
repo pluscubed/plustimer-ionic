@@ -2,8 +2,7 @@ solves-bar {
   width: 100%;
   height: 100%;
   position: fixed;
-  transform: translate3d(0, 0px, 0);
-  top: calc(100% - 48px - 1.2em - 8px);
+  transform: translate3d(0, calc(100% - 48px - 1.2em - 8px), 0);
 }
 
 .bottom-bar {
@@ -20,7 +19,7 @@ solves-bar {
 }
 
 .solves {
-  height: 100%;
+  height: calc(100% - 1.2em - 8px);
 }
 
 .solves-sheet {
