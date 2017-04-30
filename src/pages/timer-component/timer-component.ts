@@ -118,19 +118,25 @@ export namespace Timer {
 
           switch (this.timer.state) {
             case TimerState.Stopped:
-              return Observable.of(this.timer.time)
-                .do((time: number) => {
-                  let solve = new Solve(time, Date.now(), "");
-                  this.solvesService.add(solve);
-                });
+              return Observable.of(this.timer.time);
             default:
               return Observable.empty();
           }
         })
         .map((time: number) => new ViewModel(Util.formatTime(time)));
 
-      const up$ = Observable.merge(intent.keyup$.filter(event => event.key === ' ' || this.timer.state == TimerState.Stopped), intent.touchup$)
+
+      const upIntent$ = Observable.merge(
+        intent.keyup$.filter(event => event.key === ' ' || this.timer.state == TimerState.Stopped),
+        intent.touchup$
+      );
+
+      const stopTimerIntent$ = Observable.merge(intent.keydown$, intent.touchdown$);
+
+      const up$ = upIntent$
         .flatMap(event => {
+          let time = this.timer.time;
+
           const transitionMap = {
             "ready": TimerState.Ignore,
             "handOnTimer": TimerState.Running,
@@ -140,11 +146,16 @@ export namespace Timer {
           this.timer.setState(transitionMap[this.timer.state]);
 
           switch (this.timer.state) {
+            case TimerState.Ready:
+              //Was stopped, now done: save solve
+              let solve = new Solve(time, Date.now(), "");
+              this.solvesService.add(solve);
+              return Observable.empty();
             case TimerState.Running:
               return Observable
                 .of(0, Scheduler.animationFrame)
                 .repeat()
-                .takeUntil(downIntent$)
+                .takeUntil(stopTimerIntent$)
                 .map(i => this.timer.elapsed());
             default:
               return Observable.empty();
