@@ -214,7 +214,7 @@ export namespace Timer {
     }
 
     start() {
-      this.startTime = Date.now();
+      this.startTime = performance.now();
     }
 
     stop() {
@@ -223,7 +223,7 @@ export namespace Timer {
     }
 
     elapsed() {
-      return Date.now() - this.startTime;
+      return performance.now() - this.startTime;
     }
   }
 }

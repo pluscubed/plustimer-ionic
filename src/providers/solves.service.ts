@@ -1,6 +1,5 @@
 import {Injectable} from "@angular/core";
 import * as PouchDB from "pouchdb";
-import cordovaSqlitePlugin from "pouchdb-adapter-cordova-sqlite";
 import {Observable} from "rxjs/Rx";
 import {Platform} from "ionic-angular";
 import {Util} from "../app/util";
@@ -18,12 +17,12 @@ export class SolvesService {
     return Observable.fromPromise(this.platform.ready())
       .flatMap(() => {
         if (!this.db) {
-          PouchDB.plugin(cordovaSqlitePlugin);
+          /*PouchDB.plugin(cordovaSqlitePlugin);
           if (this.platform.is('cordova')) {
             this.db = new PouchDB('solves.db', {adapter: 'cordova-sqlite'});
-          } else {
+           } else {*/
             this.db = new PouchDB('solves.db');
-          }
+          /*}*/
         }
 
         return Observable.of(0);
@@ -35,7 +34,6 @@ export class SolvesService {
   }
 
   getAll(): Observable<Array<Solve>> {
-    /*if (!this.solves) {*/
     return Observable.of(this.solves)
       .filter(solves => !!solves)
       .concat(
@@ -54,11 +52,9 @@ export class SolvesService {
               return this.solves;
             })
           )
-      ).map(array => array.sort());
-    /* } else {
-     // Return cached data
-     return ;
-     }*/
+      ).map(array => array.sort((a: Solve, b: Solve) => {
+        return a.timestamp - b.timestamp;
+      }));
   }
 
   getChanges(): Observable<any> {
@@ -102,9 +98,5 @@ export class Solve {
     this.time = time;
     this.timestamp = timestamp;
     this.scramble = scramble;
-  }
-
-  valueof() {
-    return this.timestamp;
   }
 }
