@@ -1,4 +1,4 @@
-import {Observable, Scheduler} from "rxjs/Rx";
+import {Observable} from "rxjs/Rx";
 import {Component, HostBinding, HostListener} from "@angular/core";
 import {Solve, SolvesService} from "../../providers/solves.service";
 import {Platform} from "ionic-angular";
@@ -43,9 +43,8 @@ export class SolvesBarComponent implements SolvesBar.View {
   private expanded = false;
 
   private scrollEnabled = false;
-  private isRealScrolling = false;
-  private isFakeScrolling = false;
   private isAnimating = false;
+  private state: ScrollState;
 
   constructor(private solvesService: SolvesService,
               private platform: Platform,
@@ -65,7 +64,7 @@ export class SolvesBarComponent implements SolvesBar.View {
     }
 
     this.expandedState = "moving";
-    Observable.of(0, Scheduler.animationFrame).subscribe(() => {
+    requestAnimationFrame(() => {
       this.setExpanded(!this.expanded);
     });
   }
@@ -79,14 +78,13 @@ export class SolvesBarComponent implements SolvesBar.View {
     let dScroll = event.target.scrollTop - this.lastScrollTop;
 
     if (event.target.scrollTop > 0 || dScroll >= 0) {
-      if (!this.isFakeScrolling) {
+      if (this.state != ScrollState.FAKE_SCROLLING) {
         //If scrolling down or in the middle of scrolling, set flag
-        this.isRealScrolling = true;
+        this.state = ScrollState.REAL_SCROLLING;
       }
     } else {
       //Otherwise switch to moving the sheet
-      this.isRealScrolling = false;
-      this.isFakeScrolling = false;
+      this.state = ScrollState.PANNING;
       this.scrollEnabled = false;
     }
 
@@ -103,13 +101,30 @@ export class SolvesBarComponent implements SolvesBar.View {
 
     this.lastDy = 0;
 
-    //If expanded & going upwards, start fake-scrolling
-    if (!this.isRealScrolling && this.expanded
-      && this.lastScrollTop == 0 && event.direction == 8) {
-      this.isFakeScrolling = true;
+
+    const scroll = this.findAncestor(event.target, "solves-scroll");
+
+    //If expanded & going upwards & scrollable, start fake-scrolling
+    if (this.state != ScrollState.REAL_SCROLLING &&
+      this.expanded &&
+      this.lastScrollTop == 0 &&
+      event.additionalEvent === "panup" &&
+      scroll.scrollHeight > scroll.clientHeight) {
+
+      this.state = ScrollState.FAKE_SCROLLING;
       this.scrollEnabled = true;
       this.scrollTop = 0;
+
+    } else if (scroll.scrollHeight <= scroll.clientHeight ||
+      scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight > 0) {
+      //If not scrollable, or not at the bottom of the scroll container
+      this.state = ScrollState.PANNING;
     }
+  }
+
+  findAncestor(el: HTMLElement, cls: string) {
+    const elements = el.parentElement.parentElement.parentElement.getElementsByClassName(cls);
+    return elements.item(0);
   }
 
   @HostListener('pan', ['$event'])
@@ -120,16 +135,14 @@ export class SolvesBarComponent implements SolvesBar.View {
 
     const dY = event.deltaY - this.lastDy;
 
-    if (!this.isRealScrolling) {
-      if (this.isFakeScrolling) {
-        //Fake-scrolling
-        this.offset = 0;
-        this.scrollTop -= dY;
-      } else {
-        //Moving the sheet
-        this.expandedState = "moving";
-        this.offset = this.offset + dY;
-      }
+    if (this.state == ScrollState.FAKE_SCROLLING) {
+      //Fake-scrolling
+      this.offset = 0;
+      this.scrollTop -= dY;
+    } else if (this.state == ScrollState.PANNING) {
+      //Moving the sheet
+      this.expandedState = "moving";
+      this.offset = this.offset + dY;
     }
 
     this.lastDy = event.deltaY;
@@ -141,7 +154,7 @@ export class SolvesBarComponent implements SolvesBar.View {
       return;
     }
 
-    if (!this.isRealScrolling && !this.isFakeScrolling) {
+    if (this.state == ScrollState.PANNING) {
       //If moving the sheet, set expanded status
       this.setExpanded(this.offset < -200);
     }
@@ -149,8 +162,7 @@ export class SolvesBarComponent implements SolvesBar.View {
 
   @HostListener('touchend')
   onTouchUp() {
-    this.isFakeScrolling = false;
-    this.isRealScrolling = false;
+    this.state = ScrollState.IDLE;
   }
 
   @HostListener('@expandedTrigger.start', ['$event'])
@@ -193,6 +205,10 @@ export class SolvesBarComponent implements SolvesBar.View {
   displayTime(solve: Solve) {
     return Util.formatTime(solve.time);
   }
+}
+
+enum ScrollState{
+  IDLE, PANNING, REAL_SCROLLING, FAKE_SCROLLING
 }
 
 export namespace SolvesBar {
