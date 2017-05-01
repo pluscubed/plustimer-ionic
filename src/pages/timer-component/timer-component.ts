@@ -148,7 +148,7 @@ export namespace Timer {
           switch (this.timer.state) {
             case TimerState.Ready:
               //Was stopped, now done: save solve
-              let solve = new Solve(time, Date.now(), "");
+              let solve = new Solve(Math.trunc(time), Date.now(), "");
               this.solvesService.add(solve);
               return Observable.empty();
             case TimerState.Running:
