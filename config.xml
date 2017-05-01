@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.ionicframework.myionic2project414412" version="0.0.1" xmlns="http://www.w3.org/ns/widgets">
-  <name>MyIonic2Project</name>
-  <description>An awesome Ionic/Cordova app.</description>
-  <author email="hi@ionicframework" href="http://ionicframework.com/">Ionic Framework Team</author>
+<widget id="com.plucubed.plustimer" version="0.0.1" xmlns="http://www.w3.org/ns/widgets">
+  <name>plusTimer</name>
+  <description>Simple Rubik's cube timer.</description>
+  <author email="pluscubed@gmail.com" href="http://pluscubed.com/">Daniel Ciao</author>
   <content src="index.html"/>
   <access origin="*"/>
   <allow-navigation href="http://ionic.local/*"/>

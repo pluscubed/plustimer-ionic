@@ -12,11 +12,20 @@ import {TimerComponent} from "../pages/timer-component/timer-component";
 
 import {StatusBar} from "@ionic-native/status-bar";
 import {SplashScreen} from "@ionic-native/splash-screen";
+
+import {CloudModule, CloudSettings} from "@ionic/cloud-angular";
+
 import {SolvesService} from "../providers/solves.service";
 import {SolvesBarComponent} from "../pages/solves-bar-component/solves-bar-component";
 import {CurrentSessionPage} from "../pages/current-session-page/current-session-page";
 import {SuperTabsModule} from "ionic2-super-tabs";
 import {AppGestureConfig} from "./gesture-config";
+
+const cloudSettings: CloudSettings = {
+  'core': {
+    'app_id': 'bc5472e3'
+  }
+};
 
 @NgModule({
   declarations: [
@@ -33,6 +42,7 @@ import {AppGestureConfig} from "./gesture-config";
     BrowserAnimationsModule,
     SuperTabsModule.forRoot(),
     IonicModule.forRoot(AppComponent),
+    CloudModule.forRoot(cloudSettings)
   ],
   bootstrap: [IonicApp],
   entryComponents: [
