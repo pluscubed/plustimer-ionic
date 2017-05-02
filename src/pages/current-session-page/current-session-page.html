@@ -1,15 +1,15 @@
-<ion-header>
-  <ion-navbar color="primary">
+<ion-header no-shadow>
+  <ion-navbar color="dark">
     <button ion-button menuToggle>
-      <ion-icon name="menu"></ion-icon>
+      <ion-icon name="menu" color="white"></ion-icon>
     </button>
     <ion-title>plusTimer</ion-title>
   </ion-navbar>
 </ion-header>
 
 <ion-content>
-  <ion-tabs ion-fixed="true" tabsPlacement="top">
-    <ion-tab [root]="tab1Root" tabTitle="Timer"></ion-tab>
-    <ion-tab [root]="tab2Root" tabTitle="Details"></ion-tab>
-  </ion-tabs>
+  <super-tabs [config]="{ sideMenu: 'left' }" toolbarBackground="dark" toolbarColor="white" indicatorColor="white">
+    <super-tab [root]="tab1Root" title="Timer"></super-tab>
+    <super-tab [root]="tab2Root" title="Details"></super-tab>
+  </super-tabs>
 </ion-content>

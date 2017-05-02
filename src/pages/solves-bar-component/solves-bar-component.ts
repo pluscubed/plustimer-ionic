@@ -6,25 +6,26 @@ import {Util} from "../../app/util";
 import {animate, state, style, transition, trigger} from "@angular/animations";
 import {DomSanitizer} from "@angular/platform-browser";
 
+const expandedY = '16px';
+const collapsedY = '100% - 48px - 1.2em - 8px';
+const expanded = `translate3d(0, calc(${expandedY}), 0)`;
+const collapsed = `translate3d(0, calc(${collapsedY}), 0)`;
+
 @Component({
   selector: 'solves-bar',
   templateUrl: 'solves-bar-component.html',
   animations: [
     trigger('expandedTrigger', [
       state('moving', style({})),
-      state('false', style({
-        transform: 'translate3d(0,calc(100% - 48px - 1.2em - 8px),0)'
-      })),
-      state('true', style({
-        transform: 'translate3d(0,0px,0)'
-      })),
+      state('false', style({transform: collapsed})),
+      state('true', style({transform: expanded})),
       transition('* => true', [
         style({transform: '*'}),
-        animate('225ms cubic-bezier(0.0, 0.0, 0.2, 1)', style({transform: 'translate3d(0, 0px, 0)'}))
+        animate('225ms cubic-bezier(0.0, 0.0, 0.2, 1)', style({transform: expanded}))
       ]),
       transition('* => false', [
         style({transform: '*'}),
-        animate('195ms cubic-bezier(0.0, 0.0, 0.2, 1)', style({transform: 'translate3d(0, calc(100% - 48px - 1.2em - 8px), 0)'}))
+        animate('195ms cubic-bezier(0.0, 0.0, 0.2, 1)', style({transform: collapsed}))
       ]),
     ])
   ]
@@ -62,6 +63,10 @@ export class SolvesBarComponent implements SolvesBar.View {
     if (this.isAnimating) {
       return;
     }
+
+    this.scrollTop = 0;
+    this.state = ScrollState.IDLE;
+    this.scrollEnabled = false;
 
     this.expandedState = "moving";
     requestAnimationFrame(() => {
@@ -156,7 +161,7 @@ export class SolvesBarComponent implements SolvesBar.View {
 
     if (this.state == ScrollState.PANNING) {
       //If moving the sheet, set expanded status
-      this.setExpanded(this.offset < -200);
+      this.setExpanded(event.additionalEvent === "panup");
     }
   }
 
@@ -182,11 +187,11 @@ export class SolvesBarComponent implements SolvesBar.View {
   }
 
   @HostBinding('style.transform')
-  get top() {
+  get transform() {
     if (!this.expanded) {
-      return this.safe(`translate3d(0, calc(100% - 48px - 1.2em - 8px - ${-this.offset}px), 0)`);
+      return this.safe(`translate3d(0, calc(${collapsedY} - ${-this.offset}px), 0)`);
     } else {
-      return this.safe(`translate3d(0, calc(${this.offset}px), 0)`);
+      return this.safe(`translate3d(0, calc(${expandedY} - ${-this.offset}px), 0)`);
     }
   }
 

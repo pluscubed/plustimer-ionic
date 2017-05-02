@@ -7,10 +7,13 @@ solves-bar {
 
 .bottom-bar {
   width: 100%;
+  max-width: 800px;
   height: 100%;
   position: absolute;
   z-index: 10 !important;
   margin: 0 auto;
+  left: 0;
+  right: 0;
 }
 
 .chevron {

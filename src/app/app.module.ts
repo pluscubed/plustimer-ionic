@@ -8,8 +8,6 @@ import {TimerPage} from "../pages/timer-page/timer-page";
 import {ItemDetailsPage} from "../pages/item-details/item-details";
 import {ListPage} from "../pages/list/list";
 
-import {TimerComponent} from "../pages/timer-component/timer-component";
-
 import {StatusBar} from "@ionic-native/status-bar";
 import {SplashScreen} from "@ionic-native/splash-screen";
 
@@ -20,6 +18,7 @@ import {SolvesBarComponent} from "../pages/solves-bar-component/solves-bar-compo
 import {CurrentSessionPage} from "../pages/current-session-page/current-session-page";
 import {SuperTabsModule} from "ionic2-super-tabs";
 import {AppGestureConfig} from "./gesture-config";
+import * as timer from "../pages/timer-component/timer-component";
 
 const cloudSettings: CloudSettings = {
   'core': {
@@ -34,7 +33,7 @@ const cloudSettings: CloudSettings = {
     ItemDetailsPage,
     ListPage,
     CurrentSessionPage,
-    TimerComponent,
+    timer.TimerComponent,
     SolvesBarComponent
   ],
   imports: [
@@ -56,6 +55,7 @@ const cloudSettings: CloudSettings = {
     StatusBar,
     SplashScreen,
     SolvesService,
+    timer.Presenter,
     {provide: ErrorHandler, useClass: IonicErrorHandler},
     {provide: HAMMER_GESTURE_CONFIG, useClass: AppGestureConfig}
   ]

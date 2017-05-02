@@ -1,7 +1,7 @@
 <div class="bottom-bar">
 
   <div text-center (click)="onArrowClick()">
-    <ion-icon name="ios-arrow-up" class="chevron"></ion-icon>
+    <ion-icon [name]="this.expanded ? 'ios-arrow-down' : 'ios-arrow-up'" class="chevron"></ion-icon>
   </div>
 
   <div class="solves-sheet">
