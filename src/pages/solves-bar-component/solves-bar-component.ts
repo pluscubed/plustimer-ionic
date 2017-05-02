@@ -6,10 +6,10 @@ import {Util} from "../../app/util";
 import {animate, state, style, transition, trigger} from "@angular/animations";
 import {DomSanitizer} from "@angular/platform-browser";
 
-const expandedY = '16px';
-const collapsedY = '100% - 48px - 1.2em - 8px';
-const expanded = `translate3d(0, calc(${expandedY}), 0)`;
-const collapsed = `translate3d(0, calc(${collapsedY}), 0)`;
+export const expandedY = '16px';
+export const collapsedY = '100% - 48px - 1.2em - 8px';
+export const expanded = 'translate3d(0, calc(' + expandedY + '), 0)';
+export const collapsed = 'translate3d(0, calc(' + collapsedY + '), 0)';
 
 @Component({
   selector: 'solves-bar',
