@@ -43,7 +43,7 @@ export class SolvesBarComponent implements SolvesBar.View {
   private expandedState = "false";
   private expanded = false;
 
-  private scrollEnabled = false;
+  private scrollEnabledTouch = false;
   private isAnimating = false;
   private state: ScrollState;
 
@@ -66,12 +66,20 @@ export class SolvesBarComponent implements SolvesBar.View {
 
     this.scrollTop = 0;
     this.state = ScrollState.IDLE;
-    this.scrollEnabled = false;
+    this.scrollEnabledTouch = false;
 
     this.expandedState = "moving";
     requestAnimationFrame(() => {
       this.setExpanded(!this.expanded);
     });
+  }
+
+  get scrollEnabled() {
+    if (this.platform.is('core')) {
+      return this.expanded;
+    } else {
+      return this.scrollEnabledTouch;
+    }
   }
 
   private setExpanded(expanded: boolean) {
@@ -90,7 +98,7 @@ export class SolvesBarComponent implements SolvesBar.View {
     } else {
       //Otherwise switch to moving the sheet
       this.state = ScrollState.PANNING;
-      this.scrollEnabled = false;
+      this.scrollEnabledTouch = false;
     }
 
     this.offset = 0;
@@ -100,7 +108,7 @@ export class SolvesBarComponent implements SolvesBar.View {
 
   @HostListener('panstart', ['$event'])
   onPanStart(event: any) {
-    if (this.isAnimating) {
+    if (this.isAnimating || this.platform.is('core')) {
       return;
     }
 
@@ -117,7 +125,7 @@ export class SolvesBarComponent implements SolvesBar.View {
       scroll.scrollHeight > scroll.clientHeight) {
 
       this.state = ScrollState.FAKE_SCROLLING;
-      this.scrollEnabled = true;
+      this.scrollEnabledTouch = true;
       this.scrollTop = 0;
 
     } else if (scroll.scrollHeight <= scroll.clientHeight ||
@@ -134,7 +142,7 @@ export class SolvesBarComponent implements SolvesBar.View {
 
   @HostListener('pan', ['$event'])
   onPan(event: any) {
-    if (this.isAnimating) {
+    if (this.isAnimating || this.platform.is('core')) {
       return;
     }
 
@@ -155,7 +163,7 @@ export class SolvesBarComponent implements SolvesBar.View {
 
   @HostListener('panend', ['$event'])
   onPanEnd(event: any) {
-    if (this.isAnimating) {
+    if (this.isAnimating || this.platform.is('core')) {
       return;
     }
 
