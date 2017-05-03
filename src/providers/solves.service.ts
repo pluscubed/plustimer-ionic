@@ -29,6 +29,10 @@ export class SolvesService {
       })
   }
 
+  getLast() {
+    return this.solves[this.solves.length - 1];
+  }
+
   add(solve: Solve) {
     return this.db.post(solve);
   }
@@ -52,9 +56,9 @@ export class SolvesService {
               return this.solves;
             })
           )
-      ).map(array => array.sort((a: Solve, b: Solve) => {
+      ).map(array => this.solves.sort((a: Solve, b: Solve) => {
         return a.timestamp - b.timestamp;
-      }));
+      })).map(array => array.slice());
   }
 
   getChanges(): Observable<any> {

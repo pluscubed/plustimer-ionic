@@ -3,6 +3,7 @@ solves-bar {
   height: 100%;
   position: fixed;
   transform: translate3d(0, calc(100% - 48px - 1.2em - 8px), 0);
+  will-change: transform;
 }
 
 .bottom-bar {
@@ -34,6 +35,7 @@ solves-bar {
   flex-wrap: wrap;
   justify-content: space-between;
   align-content: flex-start;
+  will-change: scroll-position;
 }
 
 .solve {

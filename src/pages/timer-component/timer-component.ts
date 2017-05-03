@@ -2,7 +2,7 @@ import {Observable, Scheduler} from "rxjs/Rx";
 import {Component, HostListener, Injectable} from "@angular/core";
 import {Subject} from "rxjs/Subject";
 import {Solve, SolvesService} from "../../providers/solves.service";
-import {Platform} from "ionic-angular";
+import {Platform, ViewController} from "ionic-angular";
 import {Util} from "../../app/util";
 
 @Injectable()
@@ -44,7 +44,7 @@ export class Presenter {
       intent.touchup$
     );
 
-    const stopTimerIntent$ = Observable.merge(intent.keydown$, intent.touchdown$);
+    const stopTimerIntent$ = Observable.merge(intent.keydown$, intent.touchdown$, intent.cancel$);
 
     const up$ = upIntent$
       .flatMap(event => {
@@ -74,9 +74,17 @@ export class Presenter {
             return Observable.empty();
         }
       })
-      .map((time: number) => new ViewModel(Util.formatTime(time)))
+      .map((time: number) => new ViewModel(Util.formatTime(time)));
 
-    return Observable.merge<ViewModel>(down$, up$)
+    const cancel$ = intent.cancel$
+      .flatMap(() => {
+        this.timer.setState(TimerState.Ready);
+        this.timer.reset();
+        const last = this.solvesService.getLast();
+        return Observable.of(new ViewModel(Util.formatTime(last.time)));
+      });
+
+    return Observable.merge<ViewModel>(down$, up$, cancel$)
       .startWith(new ViewModel(Util.formatTime(0)));
   }
 }
@@ -95,7 +103,8 @@ export class TimerComponent implements View {
 
   constructor(private solvesService: SolvesService,
               private platform: Platform,
-              private presenter: Presenter) {
+              private presenter: Presenter,
+              private viewCtrl: ViewController) {
 
     this.keyup$ = new Subject();
     this.keydown$ = new Subject();
@@ -115,7 +124,8 @@ export class TimerComponent implements View {
       keyup$: this.keyup$.asObservable(),
       keydown$: this.keydown$.asObservable(),
       touchup$: this.touchup$.asObservable(),
-      touchdown$: this.touchdown$.asObservable()
+      touchdown$: this.touchdown$.asObservable(),
+      cancel$: this.viewCtrl.willLeave.asObservable()
     };
   }
 
@@ -161,6 +171,7 @@ export interface Intent {
   keydown$: Observable<any>;
   touchup$: Observable<any>;
   touchdown$: Observable<any>;
+  cancel$: Observable<any>;
 }
 
 const TimerState = {
