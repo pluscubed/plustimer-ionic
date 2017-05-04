@@ -5,8 +5,8 @@
   </div>
 
   <div class="solves-sheet">
-    <div class="solves-scroll" (scroll)="onSolvesScroll($event)"
-         [style.overflow]="this.scrollEnabled ? 'scroll' : 'visible'"
+    <div class="solves-scroll" #solvesscroll (scroll)="onSolvesScroll($event)"
+         [style.overflow]="this.scrollEnabled ? 'auto' : 'hidden'"
          [scrollTop]="this.scrollTop">
       <div class="solve" *ngFor="let solve of viewModel.solves">
         {{displayTime(solve)}}

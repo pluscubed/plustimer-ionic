@@ -1,5 +1,5 @@
-import {Observable} from "rxjs/Rx";
-import {Component, HostBinding, HostListener} from "@angular/core";
+import {Observable, Subject} from "rxjs/Rx";
+import {Component, ElementRef, HostBinding, HostListener, Inject, ViewChild} from "@angular/core";
 import {Solve, SolvesService} from "../../providers/solves.service";
 import {Platform} from "ionic-angular";
 import {Util} from "../../app/util";
@@ -35,7 +35,6 @@ export class SolvesBarComponent implements SolvesBar.View {
   private presenter: SolvesBar.Presenter;
 
   private offset = 0;
-  private lastDy = 0;
 
   private scrollTop = 0;
   private lastScrollTop = 0;
@@ -43,13 +42,21 @@ export class SolvesBarComponent implements SolvesBar.View {
   private expandedState = "false";
   private expanded = false;
 
-  private scrollEnabledTouch = false;
+  private scrollEnabled = false;
   private isAnimating = false;
   private state: ScrollState;
 
+  private lastY = -1;
+  private lastDy = 0;
+  private isSecondTouch = false;
+
+  @ViewChild('solvesscroll')
+  private solvesScrollView: ElementRef;
+
   constructor(private solvesService: SolvesService,
               private platform: Platform,
-              private sanitizer: DomSanitizer) {
+              private sanitizer: DomSanitizer,
+              @Inject(ElementRef) private elementRef: ElementRef) {
 
     this.presenter = new SolvesBar.Presenter(solvesService);
 
@@ -64,22 +71,15 @@ export class SolvesBarComponent implements SolvesBar.View {
       return;
     }
 
-    this.scrollTop = 0;
     this.state = ScrollState.IDLE;
-    this.scrollEnabledTouch = false;
+    this.scrollEnabled = false;
 
+    this.scrollTop = 1;
     this.expandedState = "moving";
     requestAnimationFrame(() => {
+      this.scrollTop = 0;
       this.setExpanded(!this.expanded);
     });
-  }
-
-  get scrollEnabled() {
-    if (this.platform.is('core')) {
-      return this.expanded;
-    } else {
-      return this.scrollEnabledTouch;
-    }
   }
 
   private setExpanded(expanded: boolean) {
@@ -87,18 +87,31 @@ export class SolvesBarComponent implements SolvesBar.View {
     this.expandedState = this.expanded.toString();
   }
 
+  private scrollFiring: Subject<any>;
+
   onSolvesScroll(event) {
     let dScroll = event.target.scrollTop - this.lastScrollTop;
 
-    if (event.target.scrollTop > 0 || dScroll >= 0) {
-      if (this.state != ScrollState.FAKE_SCROLLING) {
-        //If scrolling down or in the middle of scrolling, set flag
-        this.state = ScrollState.REAL_SCROLLING;
-      }
-    } else {
-      //Otherwise switch to moving the sheet
+    if ((!this.scrollFiring) && event.target.scrollTop == 0 && dScroll < 0) {
+      //If at the top and scrolling down
       this.state = ScrollState.PANNING;
-      this.scrollEnabledTouch = false;
+      this.scrollEnabled = false;
+
+    } else {
+      //If scrolling down or in the middle of scrolling, set flag
+      this.state = ScrollState.REAL_SCROLLING;
+      if (!this.scrollFiring) {
+        this.scrollFiring = new Subject<any>();
+        this.scrollFiring
+          .asObservable()
+          .timeout(100)
+          .subscribe(() => {
+          }, err => {
+            this.scrollFiring.unsubscribe();
+            this.scrollFiring = null;
+          })
+      }
+      this.scrollFiring.next(0);
     }
 
     this.offset = 0;
@@ -106,87 +119,88 @@ export class SolvesBarComponent implements SolvesBar.View {
     this.lastScrollTop = event.target.scrollTop;
   }
 
-  @HostListener('panstart', ['$event'])
-  onPanStart(event: any) {
-    if (this.isAnimating || this.platform.is('core')) {
-      return;
-    }
-
-    this.lastDy = 0;
-
-
-    const scroll = this.findAncestor(event.target, "solves-scroll");
-
-    //If expanded & going upwards & scrollable, start fake-scrolling
-    if (this.state != ScrollState.REAL_SCROLLING &&
-      this.expanded &&
-      this.lastScrollTop == 0 &&
-      event.additionalEvent === "panup" &&
-      scroll.scrollHeight > scroll.clientHeight) {
-
-      this.state = ScrollState.FAKE_SCROLLING;
-      this.scrollEnabledTouch = true;
-      this.scrollTop = 0;
-
-    } else if (scroll.scrollHeight <= scroll.clientHeight ||
-      scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight > 0) {
-      //If not scrollable, or not at the bottom of the scroll container
-      this.state = ScrollState.PANNING;
-    }
-  }
-
   findAncestor(el: HTMLElement, cls: string) {
     const elements = el.parentElement.parentElement.parentElement.getElementsByClassName(cls);
     return elements.item(0);
   }
 
-  @HostListener('pan', ['$event'])
-  onPan(event: any) {
-    if (this.isAnimating || this.platform.is('core')) {
+  @HostListener('touchmove', ['$event'])
+  onTouchMove(e: any) {
+    if (this.isAnimating) {
       return;
     }
 
-    const dY = event.deltaY - this.lastDy;
+    let touchobj = e.changedTouches[0];
+    const dY = touchobj.clientY - this.lastY;
 
-    if (this.state == ScrollState.FAKE_SCROLLING) {
-      //Fake-scrolling
-      this.offset = 0;
-      this.scrollTop -= dY;
-    } else if (this.state == ScrollState.PANNING) {
-      //Moving the sheet
-      this.expandedState = "moving";
-      this.offset = this.offset + dY;
+    if (this.lastY == -1) {
+      //Initial touch event: set baseline Y
+      this.isSecondTouch = true;
+
+    } else if (this.isSecondTouch) {
+      //Second touch event: determine direction, whether to move the sheet
+
+      const solvesScrollElement: HTMLElement = this.solvesScrollView.nativeElement;
+
+      if (this.state != ScrollState.REAL_SCROLLING && !this.expanded ||
+        !this.scrollFiring && solvesScrollElement.scrollTop == 0 && dY > 0) {
+        this.scrollEnabled = false;
+        this.state = ScrollState.PANNING;
+        this.scrollTop = 0;
+        this.offset = 0;
+      }
+
+      this.isSecondTouch = false;
+
+    } else {
+      //Later touch events: move the sheet
+
+      if (this.state == ScrollState.PANNING) {
+        this.scrollEnabled = false;
+        this.expandedState = "moving";
+        this.offset = this.offset + dY;
+        this.scrollTop = 0;
+      }
+
+      this.lastDy = dY;
     }
 
-    this.lastDy = event.deltaY;
+
+    this.lastY = touchobj.clientY;
   }
 
-  @HostListener('panend', ['$event'])
-  onPanEnd(event: any) {
+  @HostListener('touchend')
+  onTouchEnd() {
     if (this.isAnimating || this.platform.is('core')) {
       return;
     }
 
     if (this.state == ScrollState.PANNING) {
       //If moving the sheet, set expanded status
-      this.setExpanded(event.additionalEvent === "panup");
+      this.setExpanded(this.lastDy < 0);
     }
-  }
 
-  @HostListener('touchend')
-  onTouchUp() {
     this.state = ScrollState.IDLE;
+
+    this.lastY = -1;
+    this.lastDy = -1;
   }
 
   @HostListener('@expandedTrigger.start', ['$event'])
   onAnimationStart(event: any) {
-    this.isAnimating = true;
+    if (event.toState != "moving") {
+      this.isAnimating = true;
+    }
   }
 
   @HostListener('@expandedTrigger.done', ['$event'])
   onAnimationDone(event: any) {
-    this.isAnimating = false;
-    this.offset = 0;
+    if (event.toState != "moving") {
+      this.isAnimating = false;
+      this.offset = 0;
+
+      this.scrollEnabled = this.expanded;
+    }
   }
 
   @HostBinding('@expandedTrigger')
