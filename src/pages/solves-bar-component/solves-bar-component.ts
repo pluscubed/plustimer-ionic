@@ -1,7 +1,7 @@
 import {Observable, Subject} from "rxjs/Rx";
 import {Component, ElementRef, HostBinding, HostListener, Inject, ViewChild} from "@angular/core";
 import {Solve, SolvesService} from "../../providers/solves.service";
-import {Platform} from "ionic-angular";
+import {Platform, VirtualScroll} from "ionic-angular";
 import {Util} from "../../app/util";
 import {animate, state, style, transition, trigger} from "@angular/animations";
 import {DomSanitizer} from "@angular/platform-browser";
@@ -39,6 +39,8 @@ export class SolvesBarComponent implements SolvesBar.View {
   private scrollTop = 0;
   private lastScrollTop = 0;
 
+  private itemWidth;
+
   private expandedState = "false";
   private expanded = false;
 
@@ -52,6 +54,9 @@ export class SolvesBarComponent implements SolvesBar.View {
 
   @ViewChild('solvesscroll')
   private solvesScrollView: ElementRef;
+
+  @ViewChild(VirtualScroll)
+  private virtualScroll;
 
   constructor(private solvesService: SolvesService,
               private platform: Platform,
@@ -217,6 +222,19 @@ export class SolvesBarComponent implements SolvesBar.View {
     }
   }
 
+  ngAfterViewInit() {
+    this.calcItemWidth();
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    this.calcItemWidth();
+
+    //Reset Virtual Scroll
+    this.virtualScroll.readUpdate(true);
+    this.virtualScroll.writeUpdate(true);
+  }
+
   safe(html) {
     return this.sanitizer.bypassSecurityTrustStyle(html);
   }
@@ -231,6 +249,16 @@ export class SolvesBarComponent implements SolvesBar.View {
 
   displayTime(solve: Solve) {
     return Util.formatTime(solve.time);
+  }
+
+  private calcItemWidth() {
+    const width = this.solvesScrollView.nativeElement.clientWidth;
+    //Max whole number of columns that will fit
+    const columns = Math.trunc(width / 64);
+    //Truncate to whole number pixels (otherwise virtualscroll puts last item on next line)
+    const pixels = Math.trunc(width / columns);
+
+    this.itemWidth = `${pixels}px`;
   }
 }
 

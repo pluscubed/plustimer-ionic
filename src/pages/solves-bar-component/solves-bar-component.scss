@@ -29,7 +29,7 @@ solves-bar {
 }
 
 .solves-scroll {
-  height: calc(25% - 1.2em - 8px - 16px);
+  max-height: calc(25% - 1.2em - 8px - 16px);
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -40,7 +40,6 @@ solves-bar {
 
 .solve {
   height: 48px;
-  width: fit-content;
   min-width: 64px;
   text-align: center;
   line-height: 48px;
