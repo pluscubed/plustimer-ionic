@@ -1,7 +1,7 @@
 import {Observable, Subject} from "rxjs/Rx";
-import {Component, ElementRef, HostBinding, HostListener, Inject, ViewChild} from "@angular/core";
+import {Component, HostBinding, HostListener, ViewChild} from "@angular/core";
 import {Solve, SolvesService} from "../../providers/solves.service";
-import {Platform, VirtualScroll} from "ionic-angular";
+import {Content, Platform, VirtualScroll} from "ionic-angular";
 import {Util} from "../../app/util";
 import {animate, state, style, transition, trigger} from "@angular/animations";
 import {DomSanitizer} from "@angular/platform-browser";
@@ -36,15 +36,11 @@ export class SolvesBarComponent implements SolvesBar.View {
 
   private offset = 0;
 
-  private scrollTop = 0;
-  private lastScrollTop = 0;
-
   private itemWidth;
 
   private expandedState = "false";
   private expanded = false;
 
-  private scrollEnabled = false;
   private isAnimating = false;
   private state: ScrollState;
 
@@ -52,16 +48,16 @@ export class SolvesBarComponent implements SolvesBar.View {
   private lastDy = 0;
   private isSecondTouch = false;
 
-  @ViewChild('solvesscroll')
-  private solvesScrollView: ElementRef;
-
+  @ViewChild(Content)
+  private scrollContent: Content;
   @ViewChild(VirtualScroll)
   private virtualScroll;
 
+  private scrollContentElement: HTMLElement;
+
   constructor(private solvesService: SolvesService,
               private platform: Platform,
-              private sanitizer: DomSanitizer,
-              @Inject(ElementRef) private elementRef: ElementRef) {
+              private sanitizer: DomSanitizer) {
 
     this.presenter = new SolvesBar.Presenter(solvesService);
 
@@ -71,20 +67,30 @@ export class SolvesBarComponent implements SolvesBar.View {
       .subscribe(viewModel => this.viewModel = viewModel);
   }
 
+  ngAfterViewInit() {
+    this.scrollContentElement = this.scrollContent._scrollContent.nativeElement;
+    this.calcItemWidth();
+  }
+
   onArrowClick() {
     if (this.isAnimating) {
       return;
     }
 
     this.state = ScrollState.IDLE;
-    this.scrollEnabled = false;
+    this.setScrollEnabled(false);
 
-    this.scrollTop = 1;
+    this.scrollContent.scrollToTop();
     this.expandedState = "moving";
     requestAnimationFrame(() => {
-      this.scrollTop = 0;
       this.setExpanded(!this.expanded);
     });
+  }
+
+  private setScrollEnabled(enabled: boolean) {
+    if (!!this.scrollContentElement) {
+      this.scrollContentElement.style.overflowY = enabled ? "auto" : "hidden";
+    }
   }
 
   private setExpanded(expanded: boolean) {
@@ -93,36 +99,6 @@ export class SolvesBarComponent implements SolvesBar.View {
   }
 
   private scrollFiring: Subject<any>;
-
-  onSolvesScroll(event) {
-    let dScroll = event.target.scrollTop - this.lastScrollTop;
-
-    if ((!this.scrollFiring) && event.target.scrollTop == 0 && dScroll < 0) {
-      //If at the top and scrolling down
-      this.state = ScrollState.PANNING;
-      this.scrollEnabled = false;
-
-    } else {
-      //If scrolling down or in the middle of scrolling, set flag
-      this.state = ScrollState.REAL_SCROLLING;
-      if (!this.scrollFiring) {
-        this.scrollFiring = new Subject<any>();
-        this.scrollFiring
-          .asObservable()
-          .timeout(100)
-          .subscribe(() => {
-          }, err => {
-            this.scrollFiring.unsubscribe();
-            this.scrollFiring = null;
-          })
-      }
-      this.scrollFiring.next(0);
-    }
-
-    this.offset = 0;
-
-    this.lastScrollTop = event.target.scrollTop;
-  }
 
   findAncestor(el: HTMLElement, cls: string) {
     const elements = el.parentElement.parentElement.parentElement.getElementsByClassName(cls);
@@ -145,13 +121,10 @@ export class SolvesBarComponent implements SolvesBar.View {
     } else if (this.isSecondTouch) {
       //Second touch event: determine direction, whether to move the sheet
 
-      const solvesScrollElement: HTMLElement = this.solvesScrollView.nativeElement;
-
       if (this.state != ScrollState.REAL_SCROLLING && !this.expanded ||
-        !this.scrollFiring && solvesScrollElement.scrollTop == 0 && dY > 0) {
-        this.scrollEnabled = false;
+        !this.scrollFiring && this.scrollContent.scrollTop == 0 && dY > 0) {
+        this.setScrollEnabled(false);
         this.state = ScrollState.PANNING;
-        this.scrollTop = 0;
         this.offset = 0;
       }
 
@@ -161,10 +134,9 @@ export class SolvesBarComponent implements SolvesBar.View {
       //Later touch events: move the sheet
 
       if (this.state == ScrollState.PANNING) {
-        this.scrollEnabled = false;
+        this.setScrollEnabled(false);
         this.expandedState = "moving";
         this.offset = this.offset + dY;
-        this.scrollTop = 0;
       }
 
       this.lastDy = dY;
@@ -204,7 +176,7 @@ export class SolvesBarComponent implements SolvesBar.View {
       this.isAnimating = false;
       this.offset = 0;
 
-      this.scrollEnabled = this.expanded;
+      this.setScrollEnabled(this.expanded);
     }
   }
 
@@ -222,10 +194,6 @@ export class SolvesBarComponent implements SolvesBar.View {
     }
   }
 
-  ngAfterViewInit() {
-    this.calcItemWidth();
-  }
-
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
     this.calcItemWidth();
@@ -233,6 +201,10 @@ export class SolvesBarComponent implements SolvesBar.View {
     //Reset Virtual Scroll
     this.virtualScroll.readUpdate(true);
     this.virtualScroll.writeUpdate(true);
+  }
+
+  get isFullBarHeight() {
+    return this.expanded || this.state == ScrollState.PANNING || this.isAnimating;
   }
 
   safe(html) {
@@ -252,7 +224,7 @@ export class SolvesBarComponent implements SolvesBar.View {
   }
 
   private calcItemWidth() {
-    const width = this.solvesScrollView.nativeElement.clientWidth;
+    const width = this.scrollContentElement.clientWidth;
     //Max whole number of columns that will fit
     const columns = Math.trunc(width / 64);
     //Truncate to whole number pixels (otherwise virtualscroll puts last item on next line)

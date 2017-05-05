@@ -4,48 +4,47 @@ solves-bar {
   position: fixed;
   transform: translate3d(0, calc(100% - 48px - 1.2em - 8px), 0);
   will-change: transform;
-}
 
-.bottom-bar {
-  width: 100%;
-  max-width: 800px;
-  height: 100%;
-  position: absolute;
-  z-index: 10 !important;
-  margin: 0 auto;
-  left: 0;
-  right: 0;
-}
+  .bottom-bar {
+    width: 100%;
+    max-width: 800px;
+    height: 100%;
+    position: absolute;
+    z-index: 10 !important;
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+  }
 
-.chevron {
-  font-size: 1.2em;
-  padding: 4px;
-}
+  .chevron {
+    font-size: 1.2em;
+    padding: 4px;
+  }
 
-.solves-sheet {
-  box-shadow: 0px -4px 22px -8px rgba(0, 0, 0, 0.75);
-  background: white;
-  height: 400%;
-}
+  .solves-sheet {
+    box-shadow: 0px -4px 22px -8px rgba(0, 0, 0, 0.75);
+    background: white;
+    height: 400%;
+  }
 
-.solves-scroll {
-  max-height: calc(25% - 1.2em - 8px - 16px);
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-content: flex-start;
-  will-change: scroll-position;
-}
+  .solves-scroll {
+    height: calc(25% - 1.2em - 8px - 16px);
+  }
 
-.solve {
-  height: 48px;
-  min-width: 64px;
-  text-align: center;
-  line-height: 48px;
-  vertical-align: middle;
-}
+  .scroll-content {
+    overflow-y: hidden;
+  }
 
-.filler {
-  height: 0;
+  .solves-container {
+    height: 100%;
+  }
+
+  .solve {
+    height: 48px;
+    min-width: 64px;
+    text-align: center;
+    line-height: 48px;
+    vertical-align: middle;
+    display: inline-block
+  }
 }

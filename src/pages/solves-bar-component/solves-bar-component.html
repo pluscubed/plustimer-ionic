@@ -5,18 +5,20 @@
   </div>
 
   <div class="solves-sheet">
-    <div class="solves-scroll" #solvesscroll
-         (scroll)="onSolvesScroll($event)"
-         [style.overflow]="this.scrollEnabled ? 'auto' : 'hidden'"
-         [scrollTop]="this.scrollTop"
-         [virtualScroll]="viewModel.solves"
-         [virtualTrackBy]="this.trackById"
-         [approxItemWidth]="'64px'"
-         [approxItemHeight]="'48px'">
+    <ion-content class="solves-scroll">
 
-      <div class="solve" *virtualItem="let solve" [style.width]="this.itemWidth">
-        {{displayTime(solve)}}
+      <div class="solves-container"
+           [virtualScroll]="viewModel.solves"
+           [virtualTrackBy]="this.trackById"
+           [approxItemWidth]="'64px'"
+           [approxItemHeight]="'48px'">
+
+        <div class="solve" *virtualItem="let solve" [style.width]="this.itemWidth">
+          {{displayTime(solve)}}
+        </div>
+
       </div>
-    </div>
+
+    </ion-content>
   </div>
 </div>
