@@ -5,7 +5,7 @@ import {ListPage} from "../pages/list/list";
 
 import {StatusBar} from "@ionic-native/status-bar";
 import {SplashScreen} from "@ionic-native/splash-screen";
-import {CurrentSessionPage} from "../pages/current-session-page/current-session-page";
+import {CurrentSessionPage} from "../pages/page-current-session/page-current-session";
 
 
 @Component({

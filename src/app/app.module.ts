@@ -4,7 +4,7 @@ import {ErrorHandler, NgModule} from "@angular/core";
 import {IonicApp, IonicErrorHandler, IonicModule} from "ionic-angular";
 import {AppComponent} from "./app.component";
 
-import {TimerPage} from "../pages/timer-page/timer-page";
+import {TimerPage} from "../pages/page-timer/page-timer";
 import {ItemDetailsPage} from "../pages/item-details/item-details";
 import {ListPage} from "../pages/list/list";
 
@@ -14,11 +14,11 @@ import {SplashScreen} from "@ionic-native/splash-screen";
 import {CloudModule, CloudSettings} from "@ionic/cloud-angular";
 
 import {SolvesService} from "../providers/solves.service";
-import {SolvesBarComponent} from "../pages/solves-bar-component/solves-bar-component";
-import {CurrentSessionPage} from "../pages/current-session-page/current-session-page";
+import {SolvesSheetComponent} from "../pages/solves-sheet/solves-sheet";
+import {CurrentSessionPage} from "../pages/page-current-session/page-current-session";
 import {SuperTabsModule} from "ionic2-super-tabs";
 import {AppGestureConfig} from "./gesture-config";
-import * as timer from "../pages/timer-component/timer-component";
+import * as timer from "../pages/timer/timer";
 
 const cloudSettings: CloudSettings = {
   'core': {
@@ -34,7 +34,7 @@ const cloudSettings: CloudSettings = {
     ListPage,
     CurrentSessionPage,
     timer.TimerComponent,
-    SolvesBarComponent
+    SolvesSheetComponent
   ],
   imports: [
     BrowserModule,

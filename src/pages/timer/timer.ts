@@ -91,7 +91,7 @@ export class Presenter {
 
 @Component({
   selector: 'timer',
-  templateUrl: 'timer-component.html'
+  templateUrl: 'timer.html'
 })
 export class TimerComponent implements View {
   private viewModel: ViewModel;

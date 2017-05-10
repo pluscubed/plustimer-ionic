@@ -12,8 +12,8 @@ export const expanded = 'translate3d(0, calc(' + expandedY + '), 0)';
 export const collapsed = 'translate3d(0, calc(' + collapsedY + '), 0)';
 
 @Component({
-  selector: 'solves-bar',
-  templateUrl: 'solves-bar-component.html',
+  selector: 'solves-sheet',
+  templateUrl: 'solves-sheet.html',
   animations: [
     trigger('expandedTrigger', [
       state('moving', style({})),
@@ -30,9 +30,9 @@ export const collapsed = 'translate3d(0, calc(' + collapsedY + '), 0)';
     ])
   ]
 })
-export class SolvesBarComponent implements SolvesBar.View {
-  private viewModel: SolvesBar.ViewModel;
-  private presenter: SolvesBar.Presenter;
+export class SolvesSheetComponent implements SolvesSheet.View {
+  private viewModel: SolvesSheet.ViewModel;
+  private presenter: SolvesSheet.Presenter;
 
   private offset = 0;
 
@@ -59,11 +59,11 @@ export class SolvesBarComponent implements SolvesBar.View {
               private platform: Platform,
               private sanitizer: DomSanitizer) {
 
-    this.presenter = new SolvesBar.Presenter(solvesService);
+    this.presenter = new SolvesSheet.Presenter(solvesService);
 
     this.presenter.viewModel$(this.intent())
       .do(null, err => console.log('%s', err))
-      .onErrorResumeNext(Observable.empty<SolvesBar.ViewModel>())
+      .onErrorResumeNext(Observable.empty<SolvesSheet.ViewModel>())
       .subscribe(viewModel => this.viewModel = viewModel);
   }
 
@@ -215,7 +215,7 @@ export class SolvesBarComponent implements SolvesBar.View {
     return item._id;
   }
 
-  intent(): SolvesBar.Intent {
+  intent(): SolvesSheet.Intent {
     return {};
   }
 
@@ -238,7 +238,7 @@ enum ScrollState{
   IDLE, PANNING, REAL_SCROLLING, FAKE_SCROLLING
 }
 
-export namespace SolvesBar {
+export namespace SolvesSheet {
 
   export class ViewModel {
 

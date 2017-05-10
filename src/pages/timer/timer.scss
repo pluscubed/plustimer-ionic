@@ -5,9 +5,9 @@ timer {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
 
-.time {
-  font-size: 15vw;
-  font-family: monospace;
+  .time {
+    font-size: 15vw;
+    font-family: monospace;
+  }
 }
