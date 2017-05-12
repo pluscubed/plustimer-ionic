@@ -1,6 +1,5 @@
 {
   "name": "plusTimer",
   "app_id": "bc5472e3",
-  "v2": true,
-  "typescript": true
+  "type": "ionic-angular"
 }

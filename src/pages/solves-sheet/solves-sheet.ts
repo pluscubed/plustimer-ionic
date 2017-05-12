@@ -7,7 +7,7 @@ import {animate, state, style, transition, trigger} from "@angular/animations";
 import {DomSanitizer} from "@angular/platform-browser";
 
 export const expandedY = '16px';
-export const collapsedY = '100% - 48px - 1.2em - 8px';
+export const collapsedY = '100% - 48px - 24px';
 export const expanded = 'translate3d(0, calc(' + expandedY + '), 0)';
 export const collapsed = 'translate3d(0, calc(' + collapsedY + '), 0)';
 
@@ -30,9 +30,9 @@ export const collapsed = 'translate3d(0, calc(' + collapsedY + '), 0)';
     ])
   ]
 })
-export class SolvesSheetComponent implements SolvesSheet.View {
-  private viewModel: SolvesSheet.ViewModel;
-  private presenter: SolvesSheet.Presenter;
+export class SolvesSheetComponent implements View {
+  private viewModel: ViewModel;
+  private presenter: Presenter;
 
   private offset = 0;
 
@@ -59,11 +59,11 @@ export class SolvesSheetComponent implements SolvesSheet.View {
               private platform: Platform,
               private sanitizer: DomSanitizer) {
 
-    this.presenter = new SolvesSheet.Presenter(solvesService);
+    this.presenter = new Presenter(solvesService);
 
     this.presenter.viewModel$(this.intent())
       .do(null, err => console.log('%s', err))
-      .onErrorResumeNext(Observable.empty<SolvesSheet.ViewModel>())
+      .onErrorResumeNext(Observable.empty<ViewModel>())
       .subscribe(viewModel => this.viewModel = viewModel);
   }
 
@@ -215,7 +215,7 @@ export class SolvesSheetComponent implements SolvesSheet.View {
     return item._id;
   }
 
-  intent(): SolvesSheet.Intent {
+  intent(): Intent {
     return {};
   }
 
@@ -238,34 +238,31 @@ enum ScrollState{
   IDLE, PANNING, REAL_SCROLLING, FAKE_SCROLLING
 }
 
-export namespace SolvesSheet {
+export class ViewModel {
 
-  export class ViewModel {
+  constructor(public readonly solves: Array<Solve>) {
+    console.log("" + solves.length);
+  }
+}
 
-    constructor(public readonly solves: Array<Solve>) {
-      console.log("" + solves.length);
-    }
+export interface View {
+  intent(): Intent;
+}
+
+export interface Intent {
+}
+
+export class Presenter {
+  solvesService: SolvesService;
+
+  constructor(solvesService: SolvesService) {
+    this.solvesService = solvesService;
   }
 
-  export interface View {
-    intent(): Intent;
-  }
-
-  export interface Intent {
-  }
-
-  export class Presenter {
-    solvesService: SolvesService;
-
-    constructor(solvesService: SolvesService) {
-      this.solvesService = solvesService;
-    }
-
-    viewModel$(intent: Intent) {
-      return Observable.merge(this.solvesService.getAll()
-        .map(solves => solves.reverse())
-        .map(solves => new ViewModel(solves)))
-        .startWith(new ViewModel([]));
-    }
+  viewModel$(intent: Intent) {
+    return Observable.merge(this.solvesService.getAll()
+      .map(solves => solves.reverse())
+      .map(solves => new ViewModel(solves)))
+      .startWith(new ViewModel([]));
   }
 }

@@ -1,8 +1,9 @@
 solves-sheet {
   width: 100%;
   height: 100%;
+  top: 0;
   position: fixed;
-  transform: translate3d(0, calc(100% - 48px - 1.2em - 8px), 0);
+  transform: translate3d(0, calc(100% - 48px - 24px), 0);
   will-change: transform;
 
   .bottom-bar {
@@ -18,6 +19,7 @@ solves-sheet {
 
   .chevron {
     font-size: 1.2em;
+    height: 24px;
     padding: 4px;
   }
 

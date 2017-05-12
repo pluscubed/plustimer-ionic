@@ -19,6 +19,9 @@ import {CurrentSessionPage} from "../pages/page-current-session/page-current-ses
 import {SuperTabsModule} from "ionic2-super-tabs";
 import {AppGestureConfig} from "./gesture-config";
 import * as timer from "../pages/timer/timer";
+import * as scramble from "../pages/scramble/scramble";
+import {TimerService} from "../providers/timer.service";
+import {ScrambleService} from "../providers/scramble.service";
 
 const cloudSettings: CloudSettings = {
   'core': {
@@ -34,7 +37,8 @@ const cloudSettings: CloudSettings = {
     ListPage,
     CurrentSessionPage,
     timer.TimerComponent,
-    SolvesSheetComponent
+    SolvesSheetComponent,
+    scramble.ScrambleComponent
   ],
   imports: [
     BrowserModule,
@@ -55,7 +59,10 @@ const cloudSettings: CloudSettings = {
     StatusBar,
     SplashScreen,
     SolvesService,
+    TimerService,
+    ScrambleService,
     timer.Presenter,
+    scramble.Presenter,
     {provide: ErrorHandler, useClass: IonicErrorHandler},
     {provide: HAMMER_GESTURE_CONFIG, useClass: AppGestureConfig}
   ]

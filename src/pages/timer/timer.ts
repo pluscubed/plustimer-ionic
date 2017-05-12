@@ -4,13 +4,13 @@ import {Subject} from "rxjs/Subject";
 import {Solve, SolvesService} from "../../providers/solves.service";
 import {Platform, ViewController} from "ionic-angular";
 import {Util} from "../../app/util";
+import {TimerService, TimerState} from "../../providers/timer.service";
 
 @Injectable()
 export class Presenter {
-  timer: Timer;
 
-  constructor(private solvesService: SolvesService) {
-    this.timer = new Timer();
+  constructor(private solvesService: SolvesService,
+              private timer: TimerService) {
   }
 
   viewModel$(intent: Intent) {
@@ -20,7 +20,7 @@ export class Presenter {
     );
 
     const down$ = downIntent$
-      .flatMap(event => {
+      .do(event => {
         const transitionMap = {
           "ready": TimerState.HandOnTimer,
           "handOnTimer": TimerState.Ignore,
@@ -28,15 +28,7 @@ export class Presenter {
           "stopped": TimerState.Ignore
         };
         this.timer.setState(transitionMap[this.timer.state]);
-
-        switch (this.timer.state) {
-          case TimerState.Stopped:
-            return Observable.of(this.timer.time);
-          default:
-            return Observable.empty();
-        }
-      })
-      .map((time: number) => new ViewModel(Util.formatTime(time)));
+      });
 
 
     const upIntent$ = Observable.merge(
@@ -44,12 +36,8 @@ export class Presenter {
       intent.touchup$
     );
 
-    const stopTimerIntent$ = Observable.merge(intent.keydown$, intent.touchdown$, intent.cancel$);
-
     const up$ = upIntent$
-      .flatMap(event => {
-        let time = this.timer.time;
-
+      .do(event => {
         const transitionMap = {
           "ready": TimerState.Ignore,
           "handOnTimer": TimerState.Running,
@@ -57,13 +45,20 @@ export class Presenter {
           "stopped": TimerState.Ready
         };
         this.timer.setState(transitionMap[this.timer.state]);
+      });
 
+    const stopTimerIntent$ = Observable.merge(intent.keydown$, intent.touchdown$, intent.cancel$);
+
+    const timeAction$ = Observable.merge(down$, up$)
+      .flatMap(() => {
         switch (this.timer.state) {
           case TimerState.Ready:
             //Was stopped, now done: save solve
-            let solve = new Solve(Math.trunc(time), Date.now(), "");
+            let solve = new Solve(Math.trunc(this.timer.time), Date.now(), "");
             this.solvesService.add(solve);
             return Observable.empty();
+          case TimerState.Stopped:
+            return Observable.of(this.timer.time);
           case TimerState.Running:
             return Observable
               .of(0, Scheduler.animationFrame)
@@ -76,7 +71,7 @@ export class Presenter {
       })
       .map((time: number) => new ViewModel(Util.formatTime(time)));
 
-    const cancel$ = intent.cancel$
+    const timeCancel$ = intent.cancel$
       .flatMap(() => {
         this.timer.setState(TimerState.Ready);
         this.timer.reset();
@@ -84,7 +79,9 @@ export class Presenter {
         return Observable.of(new ViewModel(Util.formatTime(last.time)));
       });
 
-    return Observable.merge<ViewModel>(down$, up$, cancel$)
+    const time$ = Observable.merge(timeAction$, timeCancel$);
+
+    return Observable.merge<ViewModel>(time$)
       .startWith(new ViewModel(Util.formatTime(0)));
   }
 }
@@ -101,8 +98,7 @@ export class TimerComponent implements View {
   private touchup$: Subject<TouchEvent>;
   private touchdown$: Subject<TouchEvent>;
 
-  constructor(private solvesService: SolvesService,
-              private platform: Platform,
+  constructor(private platform: Platform,
               private presenter: Presenter,
               private viewCtrl: ViewController) {
 
@@ -172,63 +168,4 @@ export interface Intent {
   touchup$: Observable<any>;
   touchdown$: Observable<any>;
   cancel$: Observable<any>;
-}
-
-const TimerState = {
-  Ready: "ready",
-  HandOnTimer: "handOnTimer",
-  Running: "running",
-  Stopped: "stopped",
-  Ignore: "ignore"
-};
-
-export class Timer {
-  startTime: number;
-  time: number;
-  state: string;
-
-  constructor() {
-    this.state = TimerState.Ready;
-  }
-
-  setState(state: any) {
-    switch (state) {
-      case TimerState.Ready:
-        break;
-      case TimerState.HandOnTimer:
-        this.reset();
-        break;
-      case TimerState.Running:
-        this.start();
-        break;
-      case TimerState.Stopped:
-        this.stop();
-        break;
-      case TimerState.Ignore:
-        return;
-      default:
-        console.error("Tried to set invalid state in controller:", state);
-        break;
-    }
-
-    this.state = state;
-  }
-
-  reset() {
-    this.time = 0;
-    this.startTime = 0;
-  }
-
-  start() {
-    this.startTime = performance.now();
-  }
-
-  stop() {
-    this.time = this.elapsed();
-    this.startTime = 0;
-  }
-
-  elapsed() {
-    return performance.now() - this.startTime;
-  }
 }
