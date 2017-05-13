@@ -3,7 +3,7 @@ import {Component, HostBinding, HostListener, ViewChild} from "@angular/core";
 import {Solve, SolvesService} from "../../providers/solves.service";
 import {Content, Platform, VirtualScroll} from "ionic-angular";
 import {Util} from "../../app/util";
-import {animate, state, style, transition, trigger} from "@angular/animations";
+import {style} from "@angular/animations";
 import {DomSanitizer} from "@angular/platform-browser";
 
 export const expandedY = '16px';
@@ -13,22 +13,7 @@ export const collapsed = 'translate3d(0, calc(' + collapsedY + '), 0)';
 
 @Component({
   selector: 'solves-sheet',
-  templateUrl: 'solves-sheet.html',
-  animations: [
-    trigger('expandedTrigger', [
-      state('moving', style({})),
-      state('false', style({transform: collapsed})),
-      state('true', style({transform: expanded})),
-      transition('* => true', [
-        style({transform: '*'}),
-        animate('225ms cubic-bezier(0.0, 0.0, 0.2, 1)', style({transform: expanded}))
-      ]),
-      transition('* => false', [
-        style({transform: '*'}),
-        animate('195ms cubic-bezier(0.0, 0.0, 0.2, 1)', style({transform: collapsed}))
-      ]),
-    ])
-  ]
+  templateUrl: 'solves-sheet.html'
 })
 export class SolvesSheetComponent implements View {
   private viewModel: ViewModel;
@@ -38,7 +23,6 @@ export class SolvesSheetComponent implements View {
 
   private itemWidth;
 
-  private expandedState = "false";
   private expanded = false;
 
   private isAnimating = false;
@@ -72,6 +56,21 @@ export class SolvesSheetComponent implements View {
     this.calcItemWidth();
   }
 
+  @HostBinding('style.transition')
+  get transition() {
+    if (this.isAnimating) {
+      return this.safe(`transform 225ms cubic-bezier(0.0, 0.0, 0.2, 1)`);
+    } else {
+      return this.safe('');
+    }
+  }
+
+  private setScrollEnabled(enabled: boolean) {
+    if (!!this.scrollContentElement) {
+      this.scrollContentElement.style.overflowY = enabled ? "auto" : "hidden";
+    }
+  }
+
   onArrowClick() {
     if (this.isAnimating) {
       return;
@@ -81,21 +80,8 @@ export class SolvesSheetComponent implements View {
     this.setScrollEnabled(false);
 
     this.scrollContent.scrollToTop();
-    this.expandedState = "moving";
-    requestAnimationFrame(() => {
-      this.setExpanded(!this.expanded);
-    });
-  }
 
-  private setScrollEnabled(enabled: boolean) {
-    if (!!this.scrollContentElement) {
-      this.scrollContentElement.style.overflowY = enabled ? "auto" : "hidden";
-    }
-  }
-
-  private setExpanded(expanded: boolean) {
-    this.expanded = expanded;
-    this.expandedState = this.expanded.toString();
+    this.animateExpanded(!this.expanded);
   }
 
   private scrollFiring: Subject<any>;
@@ -135,7 +121,6 @@ export class SolvesSheetComponent implements View {
 
       if (this.state == ScrollState.PANNING) {
         this.setScrollEnabled(false);
-        this.expandedState = "moving";
         this.offset = this.offset + dY;
       }
 
@@ -152,9 +137,9 @@ export class SolvesSheetComponent implements View {
       return;
     }
 
-    if (this.state == ScrollState.PANNING) {
+    if (this.state == ScrollState.PANNING && this.offset != 0) {
       //If moving the sheet, set expanded status
-      this.setExpanded(this.lastDy < 0);
+      this.animateExpanded(this.lastDy < 0);
     }
 
     this.state = ScrollState.IDLE;
@@ -163,26 +148,9 @@ export class SolvesSheetComponent implements View {
     this.lastDy = -1;
   }
 
-  @HostListener('@expandedTrigger.start', ['$event'])
-  onAnimationStart(event: any) {
-    if (event.toState != "moving") {
-      this.isAnimating = true;
-    }
-  }
-
-  @HostListener('@expandedTrigger.done', ['$event'])
-  onAnimationDone(event: any) {
-    if (event.toState != "moving") {
-      this.isAnimating = false;
-      this.offset = 0;
-
-      this.setScrollEnabled(this.expanded);
-    }
-  }
-
-  @HostBinding('@expandedTrigger')
-  get expandedTrigger() {
-    return this.expandedState;
+  @HostListener('transitionend')
+  onTransitionEnd() {
+    this.isAnimating = false;
   }
 
   @HostBinding('style.transform')
@@ -192,6 +160,13 @@ export class SolvesSheetComponent implements View {
     } else {
       return this.safe(`translate3d(0, calc(${expandedY} - ${-this.offset}px), 0)`);
     }
+  }
+
+  private animateExpanded(expanded: boolean) {
+    this.expanded = expanded;
+
+    this.offset = 0;
+    this.isAnimating = true;
   }
 
   @HostListener('window:resize', ['$event'])
