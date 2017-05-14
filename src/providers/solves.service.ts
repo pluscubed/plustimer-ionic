@@ -9,6 +9,22 @@ export class SolvesService {
 
   private db;
   private solves: Array<Solve>;
+  private onDatabaseChange = (change) => {
+    let index = Util.findIndex(this.solves, change.doc);
+    let solve = this.solves[index];
+
+    if (change.deleted) {
+      if (solve) {
+        this.solves.splice(index, 1); // delete
+      }
+    } else {
+      if (solve && solve._id === change.id) {
+        this.solves[index] = change.doc; // update
+      } else {
+        this.solves.push(change.doc) // insert
+      }
+    }
+  };
 
   constructor(private platform: Platform) {
   }
@@ -21,7 +37,7 @@ export class SolvesService {
           if (this.platform.is('cordova')) {
             this.db = new PouchDB('solves.db', {adapter: 'cordova-sqlite'});
            } else {*/
-            this.db = new PouchDB('solves.db');
+          this.db = new PouchDB('solves.db');
           /*}*/
         }
 
@@ -70,24 +86,6 @@ export class SolvesService {
         });
     });
   }
-
-
-  private onDatabaseChange = (change) => {
-    let index = Util.findIndex(this.solves, change.doc);
-    let solve = this.solves[index];
-
-    if (change.deleted) {
-      if (solve) {
-        this.solves.splice(index, 1); // delete
-      }
-    } else {
-      if (solve && solve._id === change.id) {
-        this.solves[index] = change.doc; // update
-      } else {
-        this.solves.push(change.doc) // insert
-      }
-    }
-  };
 
 }
 

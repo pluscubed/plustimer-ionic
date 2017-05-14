@@ -5,7 +5,6 @@ import {ListPage} from "../pages/list/list";
 
 import {StatusBar} from "@ionic-native/status-bar";
 import {SplashScreen} from "@ionic-native/splash-screen";
-import {CurrentSessionPage} from "../pages/page-current-session/page-current-session";
 
 
 @Component({
@@ -15,7 +14,7 @@ export class AppComponent {
   @ViewChild(Nav) nav: Nav;
 
   // make CurrentSessionPage the root (or first) page
-  rootPage = CurrentSessionPage;
+  rootPage = 'CurrentSessionPage';
   pages: Array<{ title: string, component: any }>;
 
   constructor(public platform: Platform,
@@ -26,7 +25,7 @@ export class AppComponent {
 
     // set our app's pages
     this.pages = [
-      {title: 'Timer', component: CurrentSessionPage},
+      {title: 'Current Session', component: 'CurrentSessionPage'},
       {title: 'My First List', component: ListPage}
     ];
   }

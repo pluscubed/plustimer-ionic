@@ -1,11 +1,23 @@
-timer {
-  width: 100%;
-  margin-bottom: 48px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+page-timer {
+  > ion-content > .scroll-content {
+    overflow-y: hidden;
+  }
+
+  .fixed-content-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .timer {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
 
   .time {
     font-size: 15vw;

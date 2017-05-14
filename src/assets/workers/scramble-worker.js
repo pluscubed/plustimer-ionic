@@ -3391,18 +3391,18 @@ scramblers["minx"] = (function () {
                 q = scramblers.lib.randomInt.below(3);
               } while (ax === la && axsl[sl] != 0);    // loop until have found an unused movetype
             } while (ax === la          // loop while move is reducible: reductions only if on same axis as previous moves
-            && !mult        // multislice moves have no reductions so always ok
-            && tl === size       // only even-sized cubes have reductions (odds have middle layer as reference)
-            && (
-              2 * axam[0] === tl ||  // reduction if already have half the slices move in same direction
-              2 * axam[1] === tl ||
-              2 * axam[2] === tl ||
-              (
-                2 * (axam[q] + 1) === tl // reduction if move makes exactly half the slices moved in same direction and
-                &&
-                axam[0] + axam[1] + axam[2] - axam[q] > 0 // some other slice also moved
+              && !mult        // multislice moves have no reductions so always ok
+              && tl === size       // only even-sized cubes have reductions (odds have middle layer as reference)
+              && (
+                2 * axam[0] === tl ||  // reduction if already have half the slices move in same direction
+                2 * axam[1] === tl ||
+                2 * axam[2] === tl ||
+                (
+                  2 * (axam[q] + 1) === tl // reduction if move makes exactly half the slices moved in same direction and
+                  &&
+                  axam[0] + axam[1] + axam[2] - axam[q] > 0 // some other slice also moved
+                )
               )
-            )
               );
 
             // if now on different axis, dump cached moves from old axis

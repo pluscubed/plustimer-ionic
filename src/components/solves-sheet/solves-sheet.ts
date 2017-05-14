@@ -1,5 +1,5 @@
 import {Observable, Subject} from "rxjs/Rx";
-import {Component, HostBinding, HostListener, ViewChild} from "@angular/core";
+import {Component, HostBinding, HostListener, Injectable, ViewChild} from "@angular/core";
 import {Solve, SolvesService} from "../../providers/solves.service";
 import {Content, Platform, VirtualScroll} from "ionic-angular";
 import {Util} from "../../app/util";
@@ -8,8 +8,22 @@ import {DomSanitizer} from "@angular/platform-browser";
 
 export const expandedY = '16px';
 export const collapsedY = '100% - 48px - 24px';
-export const expanded = 'translate3d(0, calc(' + expandedY + '), 0)';
-export const collapsed = 'translate3d(0, calc(' + collapsedY + '), 0)';
+
+@Injectable()
+export class Presenter {
+  solvesService: SolvesService;
+
+  constructor(solvesService: SolvesService) {
+    this.solvesService = solvesService;
+  }
+
+  viewModel$(intent: Intent) {
+    return Observable.merge(this.solvesService.getAll()
+      .map(solves => solves.reverse())
+      .map(solves => new ViewModel(solves)))
+      .startWith(new ViewModel([]));
+  }
+}
 
 @Component({
   selector: 'solves-sheet',
@@ -17,7 +31,6 @@ export const collapsed = 'translate3d(0, calc(' + collapsedY + '), 0)';
 })
 export class SolvesSheetComponent implements View {
   private viewModel: ViewModel;
-  private presenter: Presenter;
 
   private offset = 0;
 
@@ -38,22 +51,17 @@ export class SolvesSheetComponent implements View {
   private virtualScroll;
 
   private scrollContentElement: HTMLElement;
+  private scrollFiring: Subject<any>;
 
   constructor(private solvesService: SolvesService,
               private platform: Platform,
-              private sanitizer: DomSanitizer) {
-
-    this.presenter = new Presenter(solvesService);
+              private sanitizer: DomSanitizer,
+              private presenter: Presenter) {
 
     this.presenter.viewModel$(this.intent())
       .do(null, err => console.log('%s', err))
       .onErrorResumeNext(Observable.empty<ViewModel>())
       .subscribe(viewModel => this.viewModel = viewModel);
-  }
-
-  ngAfterViewInit() {
-    this.scrollContentElement = this.scrollContent._scrollContent.nativeElement;
-    this.calcItemWidth();
   }
 
   @HostBinding('style.transition')
@@ -65,10 +73,22 @@ export class SolvesSheetComponent implements View {
     }
   }
 
-  private setScrollEnabled(enabled: boolean) {
-    if (!!this.scrollContentElement) {
-      this.scrollContentElement.style.overflowY = enabled ? "auto" : "hidden";
+  @HostBinding('style.transform')
+  get transform() {
+    if (!this.expanded) {
+      return this.safe(`translate3d(0, calc(${collapsedY} - ${-this.offset}px), 0)`);
+    } else {
+      return this.safe(`translate3d(0, calc(${expandedY} - ${-this.offset}px), 0)`);
     }
+  }
+
+  get isFullBarHeight() {
+    return this.expanded || this.state == ScrollState.PANNING || this.isAnimating;
+  }
+
+  ngAfterViewInit() {
+    this.scrollContentElement = this.scrollContent._scrollContent.nativeElement;
+    this.calcItemWidth();
   }
 
   onArrowClick() {
@@ -83,8 +103,6 @@ export class SolvesSheetComponent implements View {
 
     this.animateExpanded(!this.expanded);
   }
-
-  private scrollFiring: Subject<any>;
 
   findAncestor(el: HTMLElement, cls: string) {
     const elements = el.parentElement.parentElement.parentElement.getElementsByClassName(cls);
@@ -153,22 +171,6 @@ export class SolvesSheetComponent implements View {
     this.isAnimating = false;
   }
 
-  @HostBinding('style.transform')
-  get transform() {
-    if (!this.expanded) {
-      return this.safe(`translate3d(0, calc(${collapsedY} - ${-this.offset}px), 0)`);
-    } else {
-      return this.safe(`translate3d(0, calc(${expandedY} - ${-this.offset}px), 0)`);
-    }
-  }
-
-  private animateExpanded(expanded: boolean) {
-    this.expanded = expanded;
-
-    this.offset = 0;
-    this.isAnimating = true;
-  }
-
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
     this.calcItemWidth();
@@ -176,10 +178,6 @@ export class SolvesSheetComponent implements View {
     //Reset Virtual Scroll
     this.virtualScroll.readUpdate(true);
     this.virtualScroll.writeUpdate(true);
-  }
-
-  get isFullBarHeight() {
-    return this.expanded || this.state == ScrollState.PANNING || this.isAnimating;
   }
 
   safe(html) {
@@ -198,6 +196,20 @@ export class SolvesSheetComponent implements View {
     return Util.formatTime(solve.time);
   }
 
+  private setScrollEnabled(enabled: boolean) {
+    if (!!this.scrollContentElement) {
+      this.scrollContentElement.style.overflowY = enabled ? "auto" : "hidden";
+    }
+  }
+
+  private animateExpanded(expanded: boolean) {
+    this.expanded = expanded;
+
+    this.offset = 0;
+    this.isAnimating = true;
+    this.setScrollEnabled(expanded);
+  }
+
   private calcItemWidth() {
     const width = this.scrollContentElement.clientWidth;
     //Max whole number of columns that will fit
@@ -209,7 +221,7 @@ export class SolvesSheetComponent implements View {
   }
 }
 
-enum ScrollState{
+enum ScrollState {
   IDLE, PANNING, REAL_SCROLLING, FAKE_SCROLLING
 }
 
@@ -225,19 +237,4 @@ export interface View {
 }
 
 export interface Intent {
-}
-
-export class Presenter {
-  solvesService: SolvesService;
-
-  constructor(solvesService: SolvesService) {
-    this.solvesService = solvesService;
-  }
-
-  viewModel$(intent: Intent) {
-    return Observable.merge(this.solvesService.getAll()
-      .map(solves => solves.reverse())
-      .map(solves => new ViewModel(solves)))
-      .startWith(new ViewModel([]));
-  }
 }

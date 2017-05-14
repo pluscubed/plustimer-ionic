@@ -7,11 +7,9 @@ import {ScrambleService} from "../../providers/scramble.service";
 @Injectable()
 export class Presenter {
 
-
   constructor(private timer: TimerService,
               private scrambleService: ScrambleService,
               private platform: Platform) {
-
   }
 
   viewModel$() {
